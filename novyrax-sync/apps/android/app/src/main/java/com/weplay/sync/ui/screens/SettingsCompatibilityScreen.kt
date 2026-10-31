@@ -81,7 +81,7 @@ fun SettingsCompatibilityScreen(
         )
         Spacer(modifier = Modifier.height(3.dp))
         Text(
-            text = "How WePlay shares audio without modifying other apps or requiring root privileges.",
+            text = "Honest technical constraints of Android AudioPlaybackCapture and Bluetooth LE Audio.",
             style = WePlayTheme.typography.bodyMedium,
             color = WePlayTheme.colors.textSecondary
         )
@@ -98,7 +98,7 @@ fun SettingsCompatibilityScreen(
 
         PermissionStatusCard(
             title = "Audio Playback Capture",
-            subtitle = "Android MediaProjection user authorization for third-party apps",
+            subtitle = "Android MediaProjection token required for each capture session",
             isGranted = true
         )
         Spacer(modifier = Modifier.height(6.dp))
@@ -110,47 +110,105 @@ fun SettingsCompatibilityScreen(
         Spacer(modifier = Modifier.height(6.dp))
         PermissionStatusCard(
             title = "Background Battery Optimization Exemption",
-            subtitle = "Allows uninterrupted audio distribution while watching YouTube",
+            subtitle = "Allows uninterrupted audio distribution while switching away from WePlay",
             isGranted = true
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Source Application Support Matrix (Honest & Transparent)
+        // Source Application Support Matrix (Rigorous & Honest)
         Text(
-            text = "SOURCE APPLICATION COMPATIBILITY",
+            text = "SOURCE APPLICATION COMPATIBILITY (PER-APP STATUS)",
             style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
             color = WePlayTheme.colors.textSecondary
         )
         Spacer(modifier = Modifier.height(8.dp))
 
         AppCompatibilityRow(
-            appName = "YouTube, Spotify & Podcasts",
-            status = "FULLY SUPPORTED",
-            statusColor = Color(0xFF24B9A6),
-            description = "Standard media usage flags permit user-authorized cross-app audio capture."
+            appName = "YouTube (Free & Premium)",
+            status = "CONDITIONAL",
+            statusColor = Color(0xFFD0A34A),
+            description = "Standard user videos capture cleanly. Paid movies, rented titles, and Widevine DRM streams are silenced by the OS."
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        AppCompatibilityRow(
+            appName = "Spotify & Podcasts",
+            status = "CONDITIONAL",
+            statusColor = Color(0xFFD0A34A),
+            description = "Standard media playback captures when target app doesn't set CAPTURE_POLICY_NONE. May vary across OEM Android skins."
         )
         Spacer(modifier = Modifier.height(6.dp))
         AppCompatibilityRow(
             appName = "Chrome & Web Browsers",
-            status = "FULLY SUPPORTED",
-            statusColor = Color(0xFF24B9A6),
-            description = "Web videos, streaming radio, and video players stream cleanly in sync."
+            status = "CONDITIONAL",
+            statusColor = Color(0xFFD0A34A),
+            description = "HTML5 audio/video tags allow capture by default. Web DRM video players in browser will be muted by Android HAL."
         )
         Spacer(modifier = Modifier.height(6.dp))
         AppCompatibilityRow(
-            appName = "Mobile Games & Video Players",
-            status = "FULLY SUPPORTED",
-            statusColor = Color(0xFF24B9A6),
-            description = "Low-latency 30ms alignment ensures game audio and local videos remain in sync."
+            appName = "Mobile Games & Local Players",
+            status = "CONDITIONAL",
+            statusColor = Color(0xFFD0A34A),
+            description = "Eligible if audio attributes use USAGE_MEDIA or USAGE_GAME. Custom low-latency OpenSL ES direct HAL streams may bypass capture."
         )
         Spacer(modifier = Modifier.height(6.dp))
         AppCompatibilityRow(
-            appName = "DRM-Protected Movies (Netflix, Prime)",
-            status = "RESTRICTED BY OS",
+            appName = "DRM Services (Netflix, Prime, Disney+)",
+            status = "UNSUPPORTED (BY DESIGN)",
             statusColor = Color(0xFFE25241),
-            description = "Android OS blanks audio capture when source applications enforce FLAG_SECURE."
+            description = "Protected by Widevine L1 and FLAG_SECURE. Android HAL strictly zeros audio capture buffers for copyright protection."
         )
+        Spacer(modifier = Modifier.height(6.dp))
+        AppCompatibilityRow(
+            appName = "VoIP & Phone Calls (WhatsApp, Zoom, Cellular)",
+            status = "UNSUPPORTED (BY DESIGN)",
+            statusColor = Color(0xFFE25241),
+            description = "USAGE_VOICE_COMMUNICATION is barred from AudioPlaybackCapture by Android privacy rules to prevent call recording."
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Auracast Technical Clarification Card
+        Text(
+            text = "BLUETOOTH AURACAST ARCHITECTURAL STATUS",
+            style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
+            color = WePlayTheme.colors.textSecondary
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(6.dp))
+                .background(WePlayTheme.colors.surface)
+                .border(1.dp, WePlayTheme.colors.separator, RoundedCornerShape(6.dp))
+                .padding(14.dp)
+        ) {
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Hardware Probe vs System API",
+                        style = WePlayTheme.typography.titleMedium.copy(fontSize = 13.sp),
+                        color = WePlayTheme.colors.textPrimary
+                    )
+                    Text(
+                        text = "OEM RESTRICTED",
+                        style = WePlayTheme.typography.tabularMetric.copy(fontSize = 9.sp),
+                        color = Color(0xFFD0A34A)
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "isLeAudioBroadcastSourceSupported() verifies physical radio capability. However, creating an Auracast broadcast requires @SystemApi MANAGE_BLUETOOTH_LE_BROADCAST_SOURCE, restricted to platform-signed system apps. WePlay directs supported phones to system Bluetooth Audio Sharing and utilizes low-latency Wi-Fi transport for universal multi-phone sync.",
+                    style = WePlayTheme.typography.bodyMedium.copy(fontSize = 11.sp, lineHeight = 16.sp),
+                    color = WePlayTheme.colors.textSecondary
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -176,7 +234,7 @@ fun SettingsCompatibilityScreen(
                         color = WePlayTheme.colors.textPrimary
                     )
                     Text(
-                        text = "Inspect jitter, packet loss, RTT, buffer depth, and clock offset",
+                        text = "Inspect true jitter, sequence gaps, packet loss, and round-trip times",
                         style = WePlayTheme.typography.bodyMedium.copy(fontSize = 11.sp),
                         color = WePlayTheme.colors.textSecondary
                     )
@@ -270,23 +328,16 @@ fun AppCompatibilityRow(
                     style = WePlayTheme.typography.titleMedium.copy(fontSize = 13.sp),
                     color = WePlayTheme.colors.textPrimary
                 )
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(3.dp))
-                        .background(statusColor.copy(alpha = 0.12f))
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                ) {
-                    Text(
-                        text = status,
-                        style = WePlayTheme.typography.tabularMetric.copy(fontSize = 8.sp),
-                        color = statusColor
-                    )
-                }
+                Text(
+                    text = status,
+                    style = WePlayTheme.typography.tabularMetric.copy(fontSize = 9.sp),
+                    color = statusColor
+                )
             }
-            Spacer(modifier = Modifier.height(3.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = description,
-                style = WePlayTheme.typography.bodyMedium.copy(fontSize = 11.sp),
+                style = WePlayTheme.typography.bodyMedium.copy(fontSize = 10.sp, lineHeight = 15.sp),
                 color = WePlayTheme.colors.textSecondary
             )
         }

@@ -175,7 +175,7 @@ fun ShareHomeScreen(
             ) {
                 RadialAudioSharingCluster(
                     isLive = isSessionLive,
-                    listenerCount = if (isSessionLive) activeSession.listeners.size else 3
+                    listenerCount = activeSession.listeners.size
                 )
             }
 

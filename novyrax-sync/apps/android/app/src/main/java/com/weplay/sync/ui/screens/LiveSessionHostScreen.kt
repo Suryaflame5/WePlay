@@ -236,11 +236,40 @@ fun LiveSessionHostScreen(
                 .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(session.listeners) { listener ->
-                ConnectedListenerCard(
-                    listener = listener,
-                    onDisconnect = { onRemoveListener(listener.id) }
-                )
+            if (session.listeners.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(WePlayTheme.colors.surface)
+                            .border(1.dp, WePlayTheme.colors.separator, RoundedCornerShape(6.dp))
+                            .padding(20.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "WAITING FOR LISTENERS TO JOIN",
+                                style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.sp),
+                                color = WePlayTheme.colors.textSecondary
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "Have companion phones open WePlay on the same Wi-Fi, tap 'Join stream', and enter code ${session.sessionCode} or scan the QR above.",
+                                style = WePlayTheme.typography.bodyMedium.copy(fontSize = 11.sp, lineHeight = 16.sp),
+                                color = WePlayTheme.colors.textSecondary,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            } else {
+                items(session.listeners) { listener ->
+                    ConnectedListenerCard(
+                        listener = listener,
+                        onDisconnect = { onRemoveListener(listener.id) }
+                    )
+                }
             }
         }
 

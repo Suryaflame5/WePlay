@@ -215,11 +215,40 @@ fun JoinSessionScreen(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(nearbyStreams) { stream ->
-                    NearbyStreamCard(
-                        stream = stream,
-                        onConnect = { onConnectToStream(stream) }
-                    )
+                if (nearbyStreams.isEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(WePlayTheme.colors.surface)
+                                .border(1.dp, WePlayTheme.colors.separator, RoundedCornerShape(8.dp))
+                                .padding(20.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "SCANNING FOR LOCAL BROADCASTS",
+                                    style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.sp),
+                                    color = WePlayTheme.colors.textSecondary
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = "Ensure the host device has started sharing on the same Wi-Fi network. Or enter the 6-character session PIN above.",
+                                    style = WePlayTheme.typography.bodyMedium.copy(fontSize = 11.sp, lineHeight = 16.sp),
+                                    color = WePlayTheme.colors.textSecondary,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    items(nearbyStreams) { stream ->
+                        NearbyStreamCard(
+                            stream = stream,
+                            onConnect = { onConnectToStream(stream) }
+                        )
+                    }
                 }
             }
         } else {

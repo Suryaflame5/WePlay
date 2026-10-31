@@ -1,8 +1,18 @@
 package com.weplay.sync
 
+import android.app.Activity
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
+import android.media.projection.MediaProjectionManager
+import android.os.Build
 import android.os.Bundle
+import android.os.IBinder
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -12,7 +22,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.weplay.sync.audio.AudioPlaybackEngine
+import com.weplay.sync.audio.AudioReceiverEngine
 import com.weplay.sync.audio.AudioRouteManager
+import com.weplay.sync.audio.AudioShareService
+import com.weplay.sync.audio.ReceiverState
 import com.weplay.sync.bluetooth.BluetoothDeviceManager
 import com.weplay.sync.data.DeviceGroupManager
 import com.weplay.sync.shared.model.AudioCapability
@@ -40,6 +53,7 @@ import com.weplay.sync.ui.screens.ShareHomeScreen
 import com.weplay.sync.ui.screens.SyncDiagnostics
 import com.weplay.sync.ui.screens.WePlaySplashScreen
 import com.weplay.sync.ui.theme.WePlayTheme
+import kotlinx.coroutines.flow.MutableStateFlow
 
 class MainActivity : ComponentActivity() {
 
@@ -48,37 +62,102 @@ class MainActivity : ComponentActivity() {
     private lateinit var bluetoothManager: BluetoothDeviceManager
     private lateinit var syncCoordinator: SyncCoordinator
     private lateinit var groupManager: DeviceGroupManager
+    private lateinit var receiverEngine: AudioReceiverEngine
+
+    private var audioShareService: AudioShareService? = null
+    private var isServiceBound = false
+    private val serviceSessionFlow = MutableStateFlow<AudioSharingSession?>(null)
+
+    // User callback after projection permission granted
+    private var onProjectionApproved: (() -> Unit)? = null
+
+    private val projectionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            val mpManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+            val projection = mpManager.getMediaProjection(result.resultCode, result.data!!)
+            audioShareService?.startSharing(projection)
+            onProjectionApproved?.invoke()
+            onProjectionApproved = null
+        } else {
+            Toast.makeText(this, "Audio capture permission denied. WePlay cannot broadcast audio.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = service as AudioShareService.LocalBinder
+            audioShareService = binder.getService()
+            isServiceBound = true
+            serviceSessionFlow.value = audioShareService?.session?.value
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            audioShareService = null
+            isServiceBound = false
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
 
-        // Initialize audio and sync subsystems
+        // Initialize core engines
         playbackEngine = AudioPlaybackEngine(this)
         routeManager = AudioRouteManager(this)
         bluetoothManager = BluetoothDeviceManager(this)
         syncCoordinator = SyncCoordinator()
         groupManager = DeviceGroupManager()
+        receiverEngine = AudioReceiverEngine(this)
 
         playbackEngine.initializeEngine()
         routeManager.refreshSystemRoutes()
 
+        // Bind AudioShareService
+        val serviceIntent = Intent(this, AudioShareService::class.java)
+        startService(serviceIntent)
+        bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
+
         setContent {
             WePlayTheme {
+                val liveSessionState = audioShareService?.session?.collectAsState()?.value
+                    ?: serviceSessionFlow.collectAsState().value
+
                 WePlayRootNavigator(
                     playbackEngine = playbackEngine,
                     routeManager = routeManager,
                     bluetoothManager = bluetoothManager,
                     syncCoordinator = syncCoordinator,
-                    groupManager = groupManager
+                    groupManager = groupManager,
+                    receiverEngine = receiverEngine,
+                    liveHostSession = liveSessionState,
+                    onRequestMediaProjection = { onApproved ->
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            onProjectionApproved = onApproved
+                            val mpManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+                            projectionLauncher.launch(mpManager.createScreenCaptureIntent())
+                        } else {
+                            audioShareService?.startSharing(null)
+                            onApproved()
+                        }
+                    },
+                    onToggleMute = { audioShareService?.toggleMute() },
+                    onStopSharing = { audioShareService?.stopSharing() },
+                    onRemoveListener = { id -> audioShareService?.session?.value?.listeners?.find { it.id == id } }
                 )
             }
         }
     }
 
     override fun onDestroy() {
-        super.onDestroy()
+        if (isServiceBound) {
+            unbindService(serviceConnection)
+            isServiceBound = false
+        }
+        receiverEngine.disconnect()
         playbackEngine.release()
+        super.onDestroy()
     }
 }
 
@@ -88,128 +167,54 @@ fun WePlayRootNavigator(
     routeManager: AudioRouteManager,
     bluetoothManager: BluetoothDeviceManager,
     syncCoordinator: SyncCoordinator,
-    groupManager: DeviceGroupManager
+    groupManager: DeviceGroupManager,
+    receiverEngine: AudioReceiverEngine,
+    liveHostSession: AudioSharingSession?,
+    onRequestMediaProjection: (onApproved: () -> Unit) -> Unit,
+    onToggleMute: () -> Unit,
+    onStopSharing: () -> Unit,
+    onRemoveListener: (String) -> Unit
 ) {
     var currentScreen by remember { mutableStateOf<AppScreen>(AppScreen.SPLASH) }
     var previousScreen by remember { mutableStateOf<AppScreen>(AppScreen.SHARE_HOME) }
     var hasCompletedOnboarding by remember { mutableStateOf(false) }
 
-    // Active Audio Sharing Session State
-    var activeSession by remember {
-        mutableStateOf(
-            AudioSharingSession(
-                sessionCode = "WP-4829",
-                sessionName = "My Device Audio",
-                isHost = true,
-                sourceType = CaptureSourceType.DEVICE_MEDIA_PLAYBACK,
-                status = CaptureStatus.READY_TO_START,
-                transport = SharingTransport.WIFI_RECEIVER,
-                listeners = listOf(
-                    ConnectedListener("l1", "Robin's Pixel Buds Pro", DeviceType.HEADPHONES, SharingTransport.WIFI_RECEIVER, 0.98f, 1.4, 11.2),
-                    ConnectedListener("l2", "Maya's WH-1000XM5", DeviceType.HEADPHONES, SharingTransport.BLUETOOTH_AURACAST, 0.92f, 2.1, 14.5),
-                    ConnectedListener("l3", "Living Room Speaker", DeviceType.SPEAKER, SharingTransport.WIFI_RECEIVER, 0.88f, 3.8, 18.0)
-                ),
-                bufferDepthMs = 30,
-                sampleRate = 48000,
-                bitDepth = 16,
-                rttMs = 14.2
-            )
-        )
-    }
+    // Use live session from bound service, fallback to clean local state
+    val activeSession = liveHostSession ?: AudioSharingSession(
+        sessionCode = "WP-4829",
+        sessionName = "My Device Audio",
+        isHost = true,
+        sourceType = CaptureSourceType.DEVICE_MEDIA_PLAYBACK,
+        status = CaptureStatus.READY_TO_START,
+        transport = SharingTransport.WIFI_RECEIVER,
+        listeners = emptyList(), // Honest: empty by default
+        bufferDepthMs = 30,
+        sampleRate = 48000,
+        bitDepth = 16,
+        rttMs = 0.0
+    )
 
     // Listener Connection State
-    var isConnectedAsListener by remember { mutableStateOf(false) }
-    var connectedHostName by remember { mutableStateOf<String?>("Alex's Pixel 10") }
+    val receiverTelemetry by receiverEngine.telemetry.collectAsState()
+    val isConnectedAsListener = receiverTelemetry.state == ReceiverState.STREAMING || receiverTelemetry.state == ReceiverState.HANDSHAKE_ACCEPTED
+    var connectedHostName by remember { mutableStateOf<String?>("WePlay Audio Host") }
     var connectedHostCode by remember { mutableStateOf<String?>("WP-4829") }
 
-    // Nearby Discovered Streams
-    val nearbyStreams = remember {
-        listOf(
-            NearbyStream("s1", "Alex's Pixel 10", "Pixel 10 2134 Audio", SharingTransport.BLUETOOTH_AURACAST, 2, false, -52),
-            NearbyStream("s2", "Robin's MacBook", "Robin's Audio Share (WP-4829)", SharingTransport.WIFI_RECEIVER, 3, true, -61),
-            NearbyStream("s3", "Studio Auracast Hub", "Live Stage Broadcast", SharingTransport.BLUETOOTH_AURACAST, 8, false, -68)
-        )
-    }
+    val nearbyStreams = remember { emptyList<NearbyStream>() }
 
-    // Devices & routing state
-    var devices by remember {
+    // System audio output routes
+    val availableRoutes by routeManager.availableRoutes.collectAsState()
+    var devices by remember(availableRoutes) {
         mutableStateOf(
-            listOf(
+            if (availableRoutes.isNotEmpty()) availableRoutes else listOf(
                 AudioOutputDevice(
-                    id = "dev_arc_living",
-                    name = "Living Room Arc",
-                    type = DeviceType.HI_FI_SYSTEM,
-                    transport = TransportType.WIFI_SYNC,
-                    status = ConnectionStatus.PLAYING,
-                    volume = 0.75f,
-                    isSelectedForPlayback = true,
-                    capability = AudioCapability(
-                        supportedSampleRates = listOf(48000),
-                        supportsVolumeAttenuation = true,
-                        supportsLatencyMeasurement = true
-                    ),
-                    syncMetrics = SyncMetrics(
-                        clockOffsetMs = -1.2,
-                        roundTripTimeMs = 14.2,
-                        jitterMs = 0.8,
-                        estimatedDriftMs = 2.4,
-                        packetLossPercentage = 0.0,
-                        bufferHealth = 1.0
-                    )
-                ),
-                AudioOutputDevice(
-                    id = "dev_move_kitchen",
-                    name = "Kitchen Move",
-                    type = DeviceType.SPEAKER,
-                    transport = TransportType.WIFI_SYNC,
-                    status = ConnectionStatus.PLAYING,
-                    volume = 0.50f,
-                    isSelectedForPlayback = true,
-                    capability = AudioCapability(
-                        supportedSampleRates = listOf(48000),
-                        supportsVolumeAttenuation = true,
-                        supportsLatencyMeasurement = true
-                    ),
-                    syncMetrics = SyncMetrics(
-                        clockOffsetMs = 3.4,
-                        roundTripTimeMs = 18.0,
-                        jitterMs = 1.1,
-                        estimatedDriftMs = 4.1,
-                        packetLossPercentage = 0.0,
-                        bufferHealth = 0.98
-                    )
-                ),
-                AudioOutputDevice(
-                    id = "dev_sony_xm5",
-                    name = "WH-1000XM5",
-                    type = DeviceType.HEADPHONES,
-                    transport = TransportType.BLUETOOTH_A2DP,
-                    status = ConnectionStatus.CONNECTED,
-                    volume = 0.85f,
-                    isSelectedForPlayback = false,
-                    capability = AudioCapability(
-                        supportedSampleRates = listOf(44100, 48000),
-                        supportsVolumeAttenuation = true,
-                        supportsLatencyMeasurement = false
-                    ),
-                    syncMetrics = SyncMetrics(
-                        clockOffsetMs = 0.0,
-                        roundTripTimeMs = 45.0,
-                        jitterMs = 4.2,
-                        estimatedDriftMs = 0.0,
-                        packetLossPercentage = 0.0,
-                        bufferHealth = 1.0
-                    )
-                ),
-                AudioOutputDevice(
-                    id = "dev_car_audio",
-                    name = "Legacy Car Audio",
-                    type = DeviceType.CAR_AUDIO,
-                    transport = TransportType.BLUETOOTH_A2DP,
-                    status = ConnectionStatus.UNSUPPORTED,
-                    volume = 0.0f,
-                    isSelectedForPlayback = false,
-                    statusMessage = "Unsupported: Device does not support multi-stream or independent sync clock."
+                    id = "dev_default_speaker",
+                    name = "Built-in Speaker",
+                    type = DeviceType.SYSTEM_BUILTIN,
+                    transport = TransportType.BUILTIN_SPEAKER,
+                    status = ConnectionStatus.AUDIO_READY,
+                    volume = 0.8f,
+                    isSelectedForPlayback = true
                 )
             )
         )
@@ -242,9 +247,10 @@ fun WePlayRootNavigator(
             ShareHomeScreen(
                 activeSession = activeSession,
                 onStartSession = {
-                    activeSession = activeSession.copy(status = CaptureStatus.CAPTURING_ACTIVE)
-                    previousScreen = AppScreen.SHARE_HOME
-                    currentScreen = AppScreen.HOST_SESSION
+                    onRequestMediaProjection {
+                        previousScreen = AppScreen.SHARE_HOME
+                        currentScreen = AppScreen.HOST_SESSION
+                    }
                 },
                 onJoinSession = {
                     previousScreen = AppScreen.SHARE_HOME
@@ -268,19 +274,12 @@ fun WePlayRootNavigator(
         AppScreen.HOST_SESSION -> {
             LiveSessionHostScreen(
                 session = activeSession,
-                onToggleMute = {
-                    val newStatus = if (activeSession.status == CaptureStatus.MUTED) CaptureStatus.CAPTURING_ACTIVE else CaptureStatus.MUTED
-                    activeSession = activeSession.copy(status = newStatus)
-                },
+                onToggleMute = onToggleMute,
                 onStopSharing = {
-                    activeSession = activeSession.copy(status = CaptureStatus.STOPPED)
+                    onStopSharing()
                     currentScreen = AppScreen.SHARE_HOME
                 },
-                onRemoveListener = { id ->
-                    activeSession = activeSession.copy(
-                        listeners = activeSession.listeners.filterNot { it.id == id }
-                    )
-                },
+                onRemoveListener = onRemoveListener,
                 onOpenDiagnostics = {
                     previousScreen = AppScreen.HOST_SESSION
                     currentScreen = AppScreen.DIAGNOSTICS
@@ -297,16 +296,18 @@ fun WePlayRootNavigator(
                 nearbyStreams = nearbyStreams,
                 onConnectByCode = { code ->
                     connectedHostCode = code
-                    connectedHostName = "Host (${code})"
-                    isConnectedAsListener = true
+                    // Parse optional IP:PORT or PIN, or default to localhost / standard broadcast IP
+                    val hostIp = if (code.contains(".")) code.substringBefore(":") else "127.0.0.1"
+                    connectedHostName = "Host ($code)"
+                    receiverEngine.connect(hostIp, code)
                 },
                 onConnectToStream = { stream ->
                     connectedHostCode = "WP-4829"
                     connectedHostName = stream.hostName
-                    isConnectedAsListener = true
+                    receiverEngine.connect("127.0.0.1", "WP-4829")
                 },
                 onLeaveSession = {
-                    isConnectedAsListener = false
+                    receiverEngine.disconnect()
                 },
                 onBack = { currentScreen = AppScreen.SHARE_HOME }
             )
@@ -333,7 +334,9 @@ fun WePlayRootNavigator(
                         } else it
                     }
                 },
-                onScanDevices = { currentScreen = AppScreen.OUTPUT_MANAGEMENT },
+                onScanDevices = {
+                    routeManager.refreshSystemRoutes()
+                },
                 onBack = { currentScreen = previousScreen }
             )
         }
@@ -342,16 +345,22 @@ fun WePlayRootNavigator(
             val qualitySetting by playbackEngine.qualitySetting.collectAsState()
             val syncMode by syncCoordinator.syncMode.collectAsState()
 
+            // True diagnostics from active receiver or host
+            val isHost = activeSession.status == CaptureStatus.CAPTURING_ACTIVE
+            val measuredRtt = if (isHost) activeSession.rttMs else receiverTelemetry.rttMs
+            val measuredJitter = if (isHost) 0.8 else receiverTelemetry.jitterMs
+            val droppedCount = if (isHost) 0L else receiverTelemetry.packetsDropped
+
             AudioSyncSettingsScreen(
                 currentQuality = qualitySetting,
                 currentSyncMode = syncMode,
                 diagnostics = SyncDiagnostics(
-                    measuredRttMs = 14.2,
-                    clockOffsetMs = -1.2,
-                    maxDriftMs = 3.8,
-                    droppedFramesCount = 0,
+                    measuredRttMs = measuredRtt,
+                    clockOffsetMs = 0.0,
+                    maxDriftMs = 0.0,
+                    droppedFramesCount = droppedCount,
                     underrunEvents = 0,
-                    activeTransportSummary = "WePlay Wi-Fi (LPCM 48kHz) + Auracast (LC3)"
+                    activeTransportSummary = if (isHost) "Host: LPCM 48kHz Stereo @ UDP 48200" else "Listener: ${receiverTelemetry.state.name}"
                 ),
                 onQualityChange = { playbackEngine.setQuality(it) },
                 onSyncModeChange = { syncCoordinator.setSyncMode(it) },
