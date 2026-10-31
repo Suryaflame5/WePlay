@@ -1,0 +1,33 @@
+# Build & Dependency Artifacts
+.gradle/
+**/build/
+**/.gradle/
+*.apk
+*.aab
+*.ap_
+*.zip
+
+# Local Android SDK configuration
+local.properties
+
+# Android Studio / IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+.shelf/
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Diagnostic dumps & screenshots
+window_dump*.xml
+weplay_device_screenshot.png
+
+# Node modules & logs
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

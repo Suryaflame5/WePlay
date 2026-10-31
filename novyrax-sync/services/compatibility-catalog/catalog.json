@@ -1,0 +1,49 @@
+{
+  "version": "1.0.0",
+  "catalog": [
+    {
+      "model": "Sony WH-1000XM5",
+      "category": "HEADPHONES",
+      "transport": "BLUETOOTH_A2DP",
+      "maxCodec": "LDAC (990 kbps)",
+      "leAudioBroadcastSupported": false,
+      "independentClockSync": false,
+      "maxSampleRate": 96000,
+      "maxBitDepth": 24,
+      "notes": "Classic Bluetooth A2DP. Host OS routes exclusive stream. Absolute volume supported via AVRCP."
+    },
+    {
+      "model": "Samsung Galaxy Buds2 Pro",
+      "category": "HEADPHONES",
+      "transport": "LE_AUDIO_UNICAST",
+      "maxCodec": "SSC / LC3",
+      "leAudioBroadcastSupported": true,
+      "independentClockSync": true,
+      "maxSampleRate": 48000,
+      "maxBitDepth": 24,
+      "notes": "Supports Auracast broadcast reception when paired with Android 13+ Auracast Assistant."
+    },
+    {
+      "model": "Sonos Arc",
+      "category": "HI_FI_SYSTEM",
+      "transport": "WIFI_SYNC",
+      "maxCodec": "LPCM 24-bit / 96kHz",
+      "leAudioBroadcastSupported": false,
+      "independentClockSync": true,
+      "maxSampleRate": 96000,
+      "maxBitDepth": 24,
+      "notes": "Supported via WePlay Companion receiver protocol. Full NTP timestamp synchronization."
+    },
+    {
+      "model": "Generic Car Audio (Bluetooth)",
+      "category": "CAR_AUDIO",
+      "transport": "BLUETOOTH_A2DP",
+      "maxCodec": "SBC / AAC",
+      "leAudioBroadcastSupported": false,
+      "independentClockSync": false,
+      "maxSampleRate": 44100,
+      "maxBitDepth": 16,
+      "notes": "Standard A2DP hands-free unit. High jitter; multi-room grouping unsupported."
+    }
+  ]
+}

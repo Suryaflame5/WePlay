@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WePlay — High-Fidelity Multi-Device Audio Platform</title>
+  <style>
+    :root {
+      --canvas: #F7F6F0;
+      --surface: #FFFFFF;
+      --surface-subtle: #F0EFE9;
+      --text-primary: #171B1D;
+      --text-secondary: #858B89;
+      --separator: #E4E3DC;
+      --accent: #21CDB8;
+      --accent-subtle: rgba(33, 205, 184, 0.12);
+      --warning: #E67E22;
+      --error: #D9534F;
+      --success: #2ECC71;
+      --radius-sm: 3px;
+      --radius-md: 6px;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+
+    [data-theme="dark"] {
+      --canvas: #121415;
+      --surface: #1A1D1F;
+      --surface-subtle: #222629;
+      --text-primary: #ECEEEA;
+      --text-secondary: #858B89;
+      --separator: #282C30;
+      --accent: #21CDB8;
+      --accent-subtle: rgba(33, 205, 184, 0.14);
+      --warning: #E67E22;
+      --error: #D9534F;
+      --success: #2ECC71;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      background: #E8E6DF;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 24px 16px 48px;
+    }
+
+    [data-theme="dark"] body {
+      background: #0B0D0E;
+    }
+
+    /* Top Studio Control Bar */
+    .studio-bar {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 18px;
+      background: var(--surface);
+      border: 1px solid var(--separator);
+      border-radius: var(--radius-md);
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+
+    .studio-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .studio-brand h1 {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+      color: var(--text-primary);
+    }
+
+    .studio-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-tool {
+      background: var(--surface-subtle);
+      border: 1px solid var(--separator);
+      color: var(--text-primary);
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: var(--font-sans);
+    }
+
+    .btn-tool:hover {
+      background: var(--text-primary);
+      color: var(--canvas);
+    }
+
+    .btn-tool.active {
+      background: var(--accent);
+      color: #121415;
+      border-color: var(--accent);
+    }
+
+    /* Mobile Device Frame */
+    .device-viewport-container {
+      position: relative;
+      display: flex;
+      justify-content: center;
+    }
+
+    .device-frame {
+      width: 390px;
+      height: 820px;
+      background: var(--canvas);
+      border: 1px solid var(--separator);
+      border-radius: 40px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 20px 48px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
+      transition: width 0.2s ease, height 0.2s ease;
+    }
+
+    .device-frame.pixel {
+      width: 412px;
+      height: 840px;
+      border-radius: 32px;
+    }
+
+    .device-frame.tablet {
+      width: 580px;
+      height: 780px;
+      border-radius: 24px;
+    }
+
+    /* Device Status Header */
+    .device-status-bar {
+      height: 44px;
+      padding: 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+      user-select: none;
+      z-index: 10;
+    }
+
+    .device-screen-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Bottom Home Indicator */
+    .home-indicator-bar {
+      height: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      user-select: none;
+    }
+
+    .home-pill {
+      width: 130px;
+      height: 4px;
+      background: var(--text-primary);
+      border-radius: 2px;
+      opacity: 0.25;
+    }
+
+    /* Typography & Core Classes */
+    .t-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+
+    .t-mono {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      font-size: 11px;
+      letter-spacing: 0.2px;
+    }
+
+    /* SPLASH VIEW */
+    .screen-splash {
+      position: absolute;
+      inset: 0;
+      background: var(--canvas);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      transition: opacity 0.2s ease;
+    }
+
+    .splash-mark-wrap {
+      width: 80px;
+      height: 80px;
+      position: relative;
+    }
+
+    .splash-title {
+      font-size: 32px;
+      font-weight: 600;
+      letter-spacing: -0.8px;
+      margin-top: 20px;
+      color: var(--text-primary);
+      transform: translateY(6px);
+      opacity: 0;
+      transition: transform 0.24s cubic-bezier(0,0,0.2,1), opacity 0.24s ease;
+    }
+
+    .splash-tagline {
+      font-size: 14px;
+      font-weight: 400;
+      letter-spacing: 0.3px;
+      color: var(--text-secondary);
+      margin-top: 6px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    /* Mark SVG Styles */
+    .mark-orbit {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 1.6;
+      stroke-linecap: round;
+      stroke-dasharray: 120;
+      stroke-dashoffset: 120;
+      transform-origin: 24px 24px;
+      transform: rotate(-22deg);
+      transition: stroke-dashoffset 0.32s cubic-bezier(0.2,0,0,1);
+    }
+
+    .mark-node {
+      fill: var(--accent);
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    .mark-play {
+      fill: var(--text-primary);
+      opacity: 0;
+      transform-origin: 24px 24px;
+      transition: opacity 0.26s cubic-bezier(0.2,0,0,1);
+    }
+
+    .mark-bar {
+      stroke: var(--accent);
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      transform-origin: center;
+      transform: scaleY(0);
+      transition: transform 0.2s cubic-bezier(0,0,0.2,1);
+    }
+
+    /* SCREEN STYLES */
+    .screen {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      padding: 0 20px 20px;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    .screen-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-top: 4px;
+    }
+
+    /* NOW PLAYING SCREEN */
+    .artwork-frame {
+      width: 100%;
+      aspect-ratio: 1;
+      background: var(--surface);
+      border: 1px solid var(--separator);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      margin-bottom: 22px;
+    }
+
+    .vinyl-disc {
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      background: var(--surface-subtle);
+      border: 1px solid var(--separator);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 12s linear;
+    }
+
+    .vinyl-disc.spinning {
+      animation: spin 16s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .vinyl-core {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--canvas);
+      border: 1px solid var(--separator);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 20px;
+    }
+
+    .track-title {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.4px;
+      color: var(--text-primary);
+    }
+
+    .track-artist {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .fidelity-tag {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      background: var(--surface-subtle);
+      border: 1px solid var(--separator);
+      color: var(--text-primary);
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+    }
+
+    .scrubber-wrap {
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    .scrubber-track {
+      width: 100%;
+      height: 2px;
+      background: var(--separator);
+      position: relative;
+      cursor: pointer;
+      padding: 8px 0;
+      background-clip: content-box;
+    }
+
+    .scrubber-fill {
+      height: 2px;
+      background: var(--accent);
+      width: 38%;
+      pointer-events: none;
+    }
+
+    .timecodes {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      color: var(--text-secondary);
+    }
+
+    .controls-row {
+      display: flex;
+      justify-content: space-evenly;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .btn-ctrl {
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 10px;
+      font-family: var(--font-sans);
+    }
+
+    .btn-ctrl-subtle {
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-family: var(--font-mono);
+    }
+
+    .btn-play-master {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: var(--text-primary);
+      color: var(--canvas);
+      border: none;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.1s ease;
+    }
+
+    .btn-play-master:active {
+      transform: scale(0.96);
+    }
+
+    .output-banner {
+      background: var(--surface);
+      border: 1px solid var(--separator);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      margin-top: auto;
+      transition: border-color 0.15s ease;
+    }
+
+    .output-banner:hover {
+      border-color: var(--accent);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+
+    /* DEVICE CARDS */
+    .device-card {
+      background: var(--surface);
+      border: 1px solid var(--separator);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      margin-bottom: 10px;
+      transition: border-color 0.15s ease;
+    }
+
+    .device-card.active-route {
+      border-color: var(--accent);
+    }
+
+    .device-card.warning-route {
+      border-color: var(--warning);
+    }
+
+    .device-card.unsupported-route {
+      border-color: var(--separator);
+      opacity: 0.7;
+    }
+
+    .device-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .device-type-tag {
+      width: 32px;
+      height: 32px;
+      background: var(--surface-subtle);
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-secondary);
+      flex-shrink: 0;
+    }
+
+    .device-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .device-sub {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .checkbox-round {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 1.5px solid var(--separator);
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.15s ease;
+    }
+
+    .checkbox-round.checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .checkbox-round.checked::after {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--surface);
+    }
+
+    .device-status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid var(--surface-subtle);
+    }
+
+    .pill-status {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 2px;
+      background: var(--accent-subtle);
+      color: var(--accent);
+    }
+
+    .pill-status.warning {
+      background: rgba(230, 126, 34, 0.12);
+      color: var(--warning);
+    }
+
+    .pill-status.muted {
+      background: var(--surface-subtle);
+      color: var(--text-secondary);
+    }
+
+    /* Hi-Fi Volume Slider */
+    .hifi-slider-container {
+      margin-top: 12px;
+    }
+
+    .hifi-slider-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      margin-bottom: 6px;
+    }
+
+    .slider-track {
+      width: 100%;
+      height: 3px;
+      background: var(--separator);
+      border-radius: 2px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .slider-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+
+    .slider-thumb {
+      width: 12px;
+      height: 12px;
+      background: var(--surface);
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      position: absolute;
+      top: -4.5px;
+      margin-left: -6px;
+      pointer-events: none;
+    }
+
+    /* TAB BAR */
+    .tab-bar-nav {
+      display: flex;
+      border: 1px solid var(--separator);
+      border-radius: 2px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 8px;
+      text-align: center;
+      background: var(--surface);
+      color: var(--text-primary);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      border: none;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+
+    .tab-btn.active {
+      background: var(--text-primary);
+      color: var(--canvas);
+    }
+
+    /* Primary Big Button */
+    .btn-action-primary {
+      width: 100%;
+      height: 46px;
+      background: var(--text-primary);
+      color: var(--canvas);
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 16px;
+    }
+
+    .notice-box {
+      background: var(--surface-subtle);
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 16px;
+      margin-top: 14px;
+    }
+  </style>
+</head>
+<body data-theme="light">
+
+  <!-- Top Studio Control Bar -->
+  <div class="studio-bar">
+    <div class="studio-brand">
+      <svg width="24" height="24" viewBox="0 0 48 48" style="flex-shrink:0;">
+        <path d="M 6.8,28.2 C 4.5,23.5 12.0,17.2 23.5,14.1 C 35.0,11.0 46.0,12.3 48.0,17.0 C 50.0,21.7 42.5,28.0 31.0,31.1 C 19.5,34.2 9.0,32.9 6.8,28.2 Z" fill="none" stroke="#21CDB8" stroke-width="2.5" />
+        <circle cx="37.5" cy="16.5" r="3" fill="#21CDB8" />
+        <circle cx="43.5" cy="24.0" r="3" fill="#21CDB8" />
+        <circle cx="8.5" cy="28.0" r="3" fill="#21CDB8" />
+        <polygon points="17,13.5 35.2,24 17,34.5" fill="#171B1D" class="svg-theme-play" />
+        <line x1="21" y1="21.5" x2="21" y2="26.5" stroke="#21CDB8" stroke-width="2.5" stroke-linecap="round" />
+        <line x1="24" y1="18.5" x2="24" y2="29.5" stroke="#21CDB8" stroke-width="2.5" stroke-linecap="round" />
+        <line x1="27" y1="16.0" x2="27" y2="32.0" stroke="#21CDB8" stroke-width="2.5" stroke-linecap="round" />
+        <line x1="30" y1="18.5" x2="30" y2="29.5" stroke="#21CDB8" stroke-width="2.5" stroke-linecap="round" />
+        <line x1="33" y1="21.5" x2="33" y2="26.5" stroke="#21CDB8" stroke-width="2.5" stroke-linecap="round" />
+      </svg>
+      <h1>WePlay Sync Engine</h1>
+    </div>
+
+    <div class="studio-controls">
+      <button class="btn-tool" id="btn-theme-toggle" title="Toggle Light / Dark theme">Theme: Light</button>
+      <button class="btn-tool" id="btn-replay-splash" title="Trigger 850ms Native Brand Splash Motion">Replay Splash</button>
+      <button class="btn-tool" id="btn-reduce-motion">Reduce Motion: Off</button>
+      <button class="btn-tool" id="btn-screen-player">Player</button>
+      <button class="btn-tool" id="btn-screen-room">Audio Room</button>
+      <button class="btn-tool" id="btn-screen-discovery">Discovery</button>
+      <button class="btn-tool" id="btn-screen-settings">Settings</button>
+      <button class="btn-tool" id="btn-screen-library">Library</button>
+    </div>
+  </div>
+
+  <!-- Mobile Device Viewport -->
+  <div class="device-viewport-container">
+    <div class="device-frame" id="device-frame">
+      <!-- Device Status Bar -->
+      <div class="device-status-bar">
+        <span>9:41</span>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <span class="t-mono" style="font-size:10px;">FLAC 96k</span>
+          <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor">
+            <path d="M1 9h2V5H1v4zm4 0h2V3H5v6zm4 0h2V1H9v8zm4 0h1V0h-1v9z"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Main Screen Content Area -->
+      <div class="device-screen-content">
+
+        <!-- 0. ANIMATED NATIVE SPLASH SCREEN (750-950ms Choreography) -->
+        <div class="screen-splash" id="screen-splash">
+          <div class="splash-mark-wrap">
+            <svg width="80" height="80" viewBox="0 0 48 48" id="splash-svg">
+              <!-- Orbit Line -->
+              <path class="mark-orbit" id="sp-orbit" d="M 6.8,28.2 C 4.5,23.5 12.0,17.2 23.5,14.1 C 35.0,11.0 46.0,12.3 48.0,17.0 C 50.0,21.7 42.5,28.0 31.0,31.1 C 19.5,34.2 9.0,32.9 6.8,28.2 Z" />
+              <!-- 3 Output Nodes -->
+              <circle class="mark-node" id="sp-node-1" cx="37.5" cy="16.5" r="2.8" />
+              <circle class="mark-node" id="sp-node-2" cx="43.5" cy="24.0" r="2.8" />
+              <circle class="mark-node" id="sp-node-3" cx="8.5" cy="28.0" r="2.8" />
+              <!-- Play Gesture -->
+              <polygon class="mark-play" id="sp-play" points="17,13.5 35.2,24 17,34.5" />
+              <!-- 5 Waveform Bars -->
+              <line class="mark-bar" id="sp-bar-1" x1="21" y1="21.5" x2="21" y2="26.5" />
+              <line class="mark-bar" id="sp-bar-2" x1="24" y1="18.5" x2="24" y2="29.5" />
+              <line class="mark-bar" id="sp-bar-3" x1="27" y1="16.0" x2="27" y2="32.0" />
+              <line class="mark-bar" id="sp-bar-4" x1="30" y1="18.5" x2="30" y2="29.5" />
+              <line class="mark-bar" id="sp-bar-5" x1="33" y1="21.5" x2="33" y2="26.5" />
+            </svg>
+          </div>
+          <div class="splash-title" id="sp-title">WePlay</div>
+          <div class="splash-tagline" id="sp-tagline">One source. In sync.</div>
+        </div>
+
+        <!-- 1. NOW PLAYING SCREEN -->
+        <div class="screen active" id="view-player">
+          <div class="screen-header">
+            <span class="t-label">WEPLAY HI-FI</span>
+            <span class="t-label" style="cursor:pointer;" id="nav-to-library">LIBRARY &gt;</span>
+          </div>
+
+          <div class="artwork-frame">
+            <div class="vinyl-disc" id="vinyl-disc">
+              <div class="vinyl-core">
+                <span class="t-mono" style="font-size:9px; color:var(--text-secondary);">96/24</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="meta-row">
+            <div>
+              <div class="track-title" id="disp-title">Unsayable</div>
+              <div class="track-artist" id="disp-artist">Brambles &bull; Charcoal</div>
+            </div>
+            <div class="fidelity-tag">FLAC 24-bit</div>
+          </div>
+
+          <div class="scrubber-wrap">
+            <div class="scrubber-track" id="scrubber-track">
+              <div class="scrubber-fill" id="scrubber-fill"></div>
+            </div>
+            <div class="timecodes">
+              <span class="t-mono" id="time-current">1:04</span>
+              <span class="t-mono" id="time-remaining">-1:48</span>
+            </div>
+          </div>
+
+          <div class="controls-row">
+            <button class="btn-ctrl btn-ctrl-subtle" id="btn-prev">|&lt;</button>
+            <button class="btn-ctrl btn-ctrl-subtle" id="btn-back15">-15s</button>
+            <button class="btn-play-master" id="btn-play-pause">PLAY</button>
+            <button class="btn-ctrl btn-ctrl-subtle" id="btn-fwd15">+15s</button>
+            <button class="btn-ctrl btn-ctrl-subtle" id="btn-next">&gt;|</button>
+          </div>
+
+          <!-- Persistent Output Selector Banner -->
+          <div class="output-banner" id="output-banner">
+            <div class="status-dot"></div>
+            <div style="flex:1;">
+              <div style="font-size:13px; font-weight:600; color:var(--text-primary);" id="active-outputs-label">2 Active Outputs In Sync</div>
+              <div style="font-size:11px; color:var(--text-secondary); margin-top:1px;" id="active-outputs-sub">Living Room Arc &bull; Kitchen Move</div>
+            </div>
+            <span class="t-label" style="color:var(--accent);">MANAGE &gt;</span>
+          </div>
+        </div>
+
+        <!-- 2. MULTI-OUTPUT AUDIO ROOM -->
+        <div class="screen" id="view-room">
+          <div class="screen-header">
+            <span class="t-label">&lt; BACK</span>
+            <span class="t-label">MULTI-OUTPUT ROOM</span>
+          </div>
+
+          <div style="margin-bottom:16px;">
+            <div style="font-size:22px; font-weight:600; letter-spacing:-0.4px;">Audio Destinations</div>
+            <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">Shared clock &bull; 2 synchronized receivers</div>
+          </div>
+
+          <!-- Master Volume Attenuator -->
+          <div class="device-card" style="margin-bottom:16px;">
+            <div class="device-card-header">
+              <div class="device-type-tag">MST</div>
+              <div>
+                <div class="device-title">Master Volume</div>
+                <div class="device-sub">Global group attenuation</div>
+              </div>
+              <button class="btn-tool" style="margin-left:auto;" id="btn-master-mute">MUTE</button>
+            </div>
+            <div class="hifi-slider-container">
+              <div class="hifi-slider-header">
+                <span class="t-mono" id="master-vol-readout">75%</span>
+                <span class="t-mono" style="color:var(--text-secondary);">-2.5 dB</span>
+              </div>
+              <div class="slider-track" id="master-slider-track">
+                <div class="slider-fill" id="master-slider-fill" style="width:75%;"></div>
+                <div class="slider-thumb" id="master-slider-thumb" style="left:75%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Outputs List -->
+          <div id="room-device-list">
+            <!-- Living Room Arc -->
+            <div class="device-card active-route" data-dev-id="arc">
+              <div class="device-card-header">
+                <div class="device-type-tag">HIFI</div>
+                <div>
+                  <div class="device-title">Living Room Arc</div>
+                  <div class="device-sub">WePlay Wi-Fi Sync &bull; 24-bit LPCM</div>
+                </div>
+                <div class="checkbox-round checked" data-toggle="arc"></div>
+              </div>
+              <div class="device-status-row">
+                <span class="pill-status">STREAMING</span>
+                <span class="t-mono" style="color:var(--text-secondary);">+2.1ms drift &bull; 14ms RTT</span>
+              </div>
+              <div class="hifi-slider-container">
+                <div class="hifi-slider-header">
+                  <span class="t-mono">VOL 80%</span>
+                </div>
+                <div class="slider-track" data-vol-track="arc">
+                  <div class="slider-fill" style="width:80%;"></div>
+                  <div class="slider-thumb" style="left:80%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Kitchen Move -->
+            <div class="device-card active-route" data-dev-id="move">
+              <div class="device-card-header">
+                <div class="device-type-tag">SPK</div>
+                <div>
+                  <div class="device-title">Kitchen Move</div>
+                  <div class="device-sub">WePlay Wi-Fi Sync &bull; 24-bit LPCM</div>
+                </div>
+                <div class="checkbox-round checked" data-toggle="move"></div>
+              </div>
+              <div class="device-status-row">
+                <span class="pill-status">STREAMING</span>
+                <span class="t-mono" style="color:var(--text-secondary);">+3.8ms drift &bull; 18ms RTT</span>
+              </div>
+              <div class="hifi-slider-container">
+                <div class="hifi-slider-header">
+                  <span class="t-mono">VOL 55%</span>
+                </div>
+                <div class="slider-track" data-vol-track="move">
+                  <div class="slider-fill" style="width:55%;"></div>
+                  <div class="slider-thumb" style="left:55%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- WH-1000XM5 Classic Bluetooth -->
+            <div class="device-card" data-dev-id="xm5">
+              <div class="device-card-header">
+                <div class="device-type-tag">HP</div>
+                <div>
+                  <div class="device-title">WH-1000XM5</div>
+                  <div class="device-sub">Classic Bluetooth A2DP (Host)</div>
+                </div>
+                <div class="checkbox-round" data-toggle="xm5"></div>
+              </div>
+              <div class="device-status-row">
+                <span class="pill-status muted">CONNECTED</span>
+                <span class="t-mono" style="color:var(--text-secondary);">Single route only</span>
+              </div>
+            </div>
+
+            <!-- Legacy BT Unsupported Route -->
+            <div class="device-card unsupported-route">
+              <div class="device-card-header">
+                <div class="device-type-tag">CAR</div>
+                <div>
+                  <div class="device-title">Car Audio System</div>
+                  <div class="device-sub">Classic BT &bull; No independent sync clock</div>
+                </div>
+              </div>
+              <div class="device-status-row">
+                <span class="pill-status muted">UNSUPPORTED</span>
+                <span class="t-mono" style="color:var(--text-secondary);">Cannot group with Wi-Fi sinks</span>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-action-primary" id="btn-go-discovery">+ SCAN &amp; ADD SINK</button>
+        </div>
+
+        <!-- 3. DEVICE DISCOVERY SCREEN -->
+        <div class="screen" id="view-discovery">
+          <div class="screen-header">
+            <span class="t-label" id="disc-back">&lt; BACK</span>
+            <span class="t-label">HARDWARE DISCOVERY</span>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:16px;">
+            <div>
+              <div style="font-size:22px; font-weight:600;">Nearby Audio Sinks</div>
+              <div style="font-size:12px; color:var(--text-secondary);" id="scan-status-text">Scanning BLE &amp; local mDNS...</div>
+            </div>
+            <button class="btn-tool active" id="btn-toggle-scan">SCANNING</button>
+          </div>
+
+          <div class="notice-box">
+            A2DP routes route host audio to 1 sink. Auracast and WePlay Wi-Fi companions support true synchronized multi-endpoint streams.
+          </div>
+
+          <div style="margin-top:16px;" id="discovery-list">
+            <!-- Discovered items -->
+            <div class="device-card">
+              <div class="device-card-header">
+                <div class="device-type-tag">NET</div>
+                <div>
+                  <div class="device-title">Studio Monitor Left (Mac mini)</div>
+                  <div class="device-sub">WePlay Receiver &bull; 192.168.1.42</div>
+                </div>
+                <button class="btn-tool" style="margin-left:auto;">CONNECT</button>
+              </div>
+              <div class="device-status-row">
+                <span class="pill-status">AVAILABLE</span>
+                <span class="t-mono" style="color:var(--text-secondary);">Wi-Fi PCM 96kHz</span>
+              </div>
+            </div>
+
+            <div class="device-card">
+              <div class="device-card-header">
+                <div class="device-type-tag">LE</div>
+                <div>
+                  <div class="device-title">Auracast Broadcast Assistant</div>
+                  <div class="device-sub">Bluetooth 5.3 &bull; LC3 ISO Stream</div>
+                </div>
+                <button class="btn-tool" style="margin-left:auto;">BIND</button>
+              </div>
+              <div class="device-status-row">
+                <span class="pill-status">READY</span>
+                <span class="t-mono" style="color:var(--text-secondary);">Multi-earbud broadcast</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. AUDIO & SYNC SETTINGS SCREEN -->
+        <div class="screen" id="view-settings">
+          <div class="screen-header">
+            <span class="t-label" id="sett-back">&lt; BACK</span>
+            <span class="t-label">ENGINE SPECIFICATION</span>
+          </div>
+
+          <div style="margin-bottom:16px;">
+            <div style="font-size:22px; font-weight:600;">Audio &amp; Synchronization</div>
+            <div style="font-size:12px; color:var(--text-secondary);">Buffer parameters and clock drift calibration</div>
+          </div>
+
+          <span class="t-label">STREAM QUALITY</span>
+          <div class="device-card active-route" style="margin:8px 0 6px;">
+            <div class="device-title">Source-Preserving (Bit-Perfect)</div>
+            <div class="device-sub">No lossy transcoding. Raw FLAC/PCM up to 192kHz/24-bit.</div>
+          </div>
+          <div class="device-card" style="margin:0 0 16px;">
+            <div class="device-title">High Quality (320 kbps Opus)</div>
+            <div class="device-sub">Low bandwidth overhead with near-transparent fidelity.</div>
+          </div>
+
+          <span class="t-label">SYNCHRONIZATION PROFILE</span>
+          <div class="device-card active-route" style="margin:8px 0 6px;">
+            <div class="device-title">Tight Alignment (30ms Buffer)</div>
+            <div class="device-sub">NTP-calibrated shared timeline eliminates multi-room acoustic echo.</div>
+          </div>
+          <div class="device-card" style="margin:0 0 16px;">
+            <div class="device-title">Minimum Latency (Direct)</div>
+            <div class="device-sub">Bypasses drift buffering for video &amp; gaming.</div>
+          </div>
+
+          <span class="t-label">REAL DIAGNOSTICS TELEMETRY</span>
+          <div class="device-card" style="margin-top:8px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+              <span style="font-size:12px; color:var(--text-secondary);">Network RTT</span>
+              <span class="t-mono">14.2 ms</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+              <span style="font-size:12px; color:var(--text-secondary);">Clock Offset (&theta;)</span>
+              <span class="t-mono">-1.8 ms</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+              <span style="font-size:12px; color:var(--text-secondary);">Measured Peak Drift</span>
+              <span class="t-mono">+3.8 ms</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+              <span style="font-size:12px; color:var(--text-secondary);">Buffer Underruns</span>
+              <span class="t-mono">0</span>
+            </div>
+            <button class="btn-action-primary" style="height:36px; font-size:11px;" id="btn-calibrate">RECALIBRATE CLOCKS</button>
+          </div>
+        </div>
+
+        <!-- 5. LIBRARY & SAVED ROOMS SCREEN -->
+        <div class="screen" id="view-library">
+          <div class="screen-header">
+            <span class="t-label" id="lib-back">&lt; BACK</span>
+            <span class="t-label">LOCAL MUSIC &amp; ROOMS</span>
+          </div>
+
+          <div class="tab-bar-nav">
+            <button class="tab-btn active" id="tab-tracks">Tracks</button>
+            <button class="tab-btn" id="tab-presets">Saved Rooms</button>
+            <button class="tab-btn" id="tab-privacy">Local Storage</button>
+          </div>
+
+          <div id="library-content">
+            <!-- Track 1 -->
+            <div class="device-card" style="cursor:pointer;" data-track="To Speak Of Solitude" data-artist="Brambles" data-album="Charcoal">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <div class="device-title">01. To Speak Of Solitude</div>
+                  <div class="device-sub">Brambles &bull; Charcoal</div>
+                </div>
+                <span class="t-mono">4:21</span>
+              </div>
+            </div>
+            <!-- Track 2 -->
+            <div class="device-card active-route" style="cursor:pointer;" data-track="Unsayable" data-artist="Brambles" data-album="Charcoal">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <div class="device-title">02. Unsayable</div>
+                  <div class="device-sub">Brambles &bull; Charcoal</div>
+                </div>
+                <span class="t-mono" style="color:var(--accent);">2:52</span>
+              </div>
+            </div>
+            <!-- Track 3 -->
+            <div class="device-card" style="cursor:pointer;" data-track="In The Androgynous Dark" data-artist="Brambles" data-album="Charcoal">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <div class="device-title">03. In The Androgynous Dark</div>
+                  <div class="device-sub">Brambles &bull; Charcoal</div>
+                </div>
+                <span class="t-mono">4:43</span>
+              </div>
+            </div>
+            <!-- Track 4 -->
+            <div class="device-card" style="cursor:pointer;" data-track="Salt Photographs" data-artist="Brambles" data-album="Charcoal">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <div class="device-title">04. Salt Photographs</div>
+                  <div class="device-sub">Brambles &bull; Charcoal</div>
+                </div>
+                <span class="t-mono">6:54</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Home Indicator -->
+      <div class="home-indicator-bar">
+        <div class="home-pill"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- REAL WEB AUDIO ENGINE ---
+    let audioCtx = null;
+    let masterGain = null;
+    let osc1 = null;
+    let osc2 = null;
+    let isPlaying = false;
+    let currentTimeSec = 64;
+    const durationSec = 172;
+    let playbackInterval = null;
+
+    function initAudioEngine() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.setValueAtTime(0.75, audioCtx.currentTime);
+        masterGain.connect(audioCtx.destination);
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function togglePlayback() {
+      initAudioEngine();
+      if (!isPlaying) {
+        startSound();
+        isPlaying = true;
+        document.getElementById('btn-play-pause').textContent = 'PAUSE';
+        document.getElementById('vinyl-disc').classList.add('spinning');
+        startTimer();
+      } else {
+        stopSound();
+        isPlaying = false;
+        document.getElementById('btn-play-pause').textContent = 'PLAY';
+        document.getElementById('vinyl-disc').classList.remove('spinning');
+        clearInterval(playbackInterval);
+      }
+    }
+
+    function startSound() {
+      try {
+        osc1 = audioCtx.createOscillator();
+        osc2 = audioCtx.createOscillator();
+        const chordGain = audioCtx.createGain();
+
+        // Warm ambient chord (D3 / A3 / F#4) inspired by Brambles ambient piano
+        osc1.type = 'triangle';
+        osc1.frequency.setValueAtTime(146.83, audioCtx.currentTime); // D3
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(220.00, audioCtx.currentTime); // A3
+
+        chordGain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+        osc1.connect(chordGain);
+        osc2.connect(chordGain);
+        chordGain.connect(masterGain);
+
+        osc1.start();
+        osc2.start();
+      } catch (e) {
+        console.warn('Audio synthesis note:', e);
+      }
+    }
+
+    function stopSound() {
+      try {
+        if (osc1) { osc1.stop(); osc1.disconnect(); osc1 = null; }
+        if (osc2) { osc2.stop(); osc2.disconnect(); osc2 = null; }
+      } catch (e) {}
+    }
+
+    function startTimer() {
+      clearInterval(playbackInterval);
+      playbackInterval = setInterval(() => {
+        currentTimeSec++;
+        if (currentTimeSec >= durationSec) currentTimeSec = 0;
+        updateTimeDisplay();
+      }, 1000);
+    }
+
+    function updateTimeDisplay() {
+      const min = Math.floor(currentTimeSec / 60);
+      const sec = currentTimeSec % 60;
+      document.getElementById('time-current').textContent = `${min}:${sec < 10 ? '0' : ''}${sec}`;
+
+      const remSec = durationSec - currentTimeSec;
+      const rMin = Math.floor(remSec / 60);
+      const rSec = remSec % 60;
+      document.getElementById('time-remaining').textContent = `-${rMin}:${rSec < 10 ? '0' : ''}${rSec}`;
+
+      const pct = (currentTimeSec / durationSec) * 100;
+      document.getElementById('scrubber-fill').style.width = pct + '%';
+    }
+
+    // --- ANIMATED SPLASH SEQUENCE (750-950ms) ---
+    let reduceMotion = false;
+
+    function runSplashChoreography() {
+      const splash = document.getElementById('screen-splash');
+      splash.style.display = 'flex';
+      splash.style.opacity = '1';
+
+      const orbit = document.getElementById('sp-orbit');
+      const nodes = [document.getElementById('sp-node-1'), document.getElementById('sp-node-2'), document.getElementById('sp-node-3')];
+      const play = document.getElementById('sp-play');
+      const bars = [1,2,3,4,5].map(i => document.getElementById(`sp-bar-${i}`));
+      const title = document.getElementById('sp-title');
+      const tagline = document.getElementById('sp-tagline');
+
+      // Reset
+      orbit.style.strokeDashoffset = '120';
+      nodes.forEach(n => n.style.opacity = '0');
+      play.style.opacity = '0';
+      bars.forEach(b => b.style.transform = 'scaleY(0)');
+      title.style.opacity = '0';
+      title.style.transform = 'translateY(6px)';
+      tagline.style.opacity = '0';
+
+      if (reduceMotion) {
+        orbit.style.strokeDashoffset = '0';
+        nodes.forEach(n => n.style.opacity = '1');
+        play.style.opacity = '1';
+        bars.forEach(b => b.style.transform = 'scaleY(1)');
+        title.style.opacity = '1';
+        title.style.transform = 'translateY(0)';
+        tagline.style.opacity = '1';
+        setTimeout(() => {
+          splash.style.opacity = '0';
+          setTimeout(() => splash.style.display = 'none', 150);
+        }, 150);
+        return;
+      }
+
+      // Step 2: 5 Waveform bars upward in staggered rhythm (80 - 280ms)
+      setTimeout(() => {
+        bars.forEach((b, idx) => {
+          setTimeout(() => { b.style.transform = 'scaleY(1)'; }, idx * 25);
+        });
+      }, 80);
+
+      // Step 3: Reveal play gesture (180 - 450ms)
+      setTimeout(() => {
+        play.style.opacity = '1';
+      }, 180);
+
+      // Step 4: Draw orbit line (320 - 640ms) & illuminate 3 nodes in sequence
+      setTimeout(() => {
+        orbit.style.strokeDashoffset = '0';
+      }, 320);
+
+      setTimeout(() => { nodes[0].style.opacity = '1'; }, 420);
+      setTimeout(() => { nodes[1].style.opacity = '1'; }, 510);
+      setTimeout(() => { nodes[2].style.opacity = '1'; }, 600);
+
+      // Step 5: Reveal wordmark (520 - 740ms)
+      setTimeout(() => {
+        title.style.opacity = '1';
+        title.style.transform = 'translateY(0)';
+      }, 520);
+
+      // Step 6: Tagline "One source. In sync." (640 - 820ms)
+      setTimeout(() => {
+        tagline.style.opacity = '1';
+      }, 640);
+
+      // Step 7: Transition into real app (~880ms)
+      setTimeout(() => {
+        splash.style.opacity = '0';
+        setTimeout(() => { splash.style.display = 'none'; }, 200);
+      }, 880);
+    }
+
+    // --- SCREEN NAVIGATION ---
+    function showScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const target = document.getElementById(screenId);
+      if (target) target.classList.add('active');
+    }
+
+    // Screen Button Listeners
+    document.getElementById('btn-screen-player').onclick = () => showScreen('view-player');
+    document.getElementById('btn-screen-room').onclick = () => showScreen('view-room');
+    document.getElementById('btn-screen-discovery').onclick = () => showScreen('view-discovery');
+    document.getElementById('btn-screen-settings').onclick = () => showScreen('view-settings');
+    document.getElementById('btn-screen-library').onclick = () => showScreen('view-library');
+
+    document.getElementById('output-banner').onclick = () => showScreen('view-room');
+    document.getElementById('nav-to-library').onclick = () => showScreen('view-library');
+    document.getElementById('btn-go-discovery').onclick = () => showScreen('view-discovery');
+    document.getElementById('disc-back').onclick = () => showScreen('view-room');
+    document.getElementById('sett-back').onclick = () => showScreen('view-player');
+    document.getElementById('lib-back').onclick = () => showScreen('view-player');
+    document.querySelector('#view-room .screen-header span:first-child').onclick = () => showScreen('view-player');
+
+    // Controls
+    document.getElementById('btn-play-pause').onclick = togglePlayback;
+    document.getElementById('btn-prev').onclick = () => { currentTimeSec = 0; updateTimeDisplay(); };
+    document.getElementById('btn-back15').onclick = () => { currentTimeSec = Math.max(0, currentTimeSec - 15); updateTimeDisplay(); };
+    document.getElementById('btn-fwd15').onclick = () => { currentTimeSec = Math.min(durationSec, currentTimeSec + 15); updateTimeDisplay(); };
+    document.getElementById('btn-next').onclick = () => { currentTimeSec = 0; updateTimeDisplay(); };
+
+    // Master Volume Slider Drag & Tap
+    const masterTrack = document.getElementById('master-slider-track');
+    const masterFill = document.getElementById('master-slider-fill');
+    const masterThumb = document.getElementById('master-slider-thumb');
+    const masterReadout = document.getElementById('master-vol-readout');
+
+    function setMasterVolume(pct) {
+      pct = Math.max(0, Math.min(100, pct));
+      masterFill.style.width = pct + '%';
+      masterThumb.style.left = pct + '%';
+      masterReadout.textContent = Math.round(pct) + '%';
+      if (masterGain && audioCtx) {
+        masterGain.gain.setValueAtTime(pct / 100, audioCtx.currentTime);
+      }
+    }
+
+    masterTrack.addEventListener('click', (e) => {
+      const rect = masterTrack.getBoundingClientRect();
+      const pct = ((e.clientX - rect.left) / rect.width) * 100;
+      setMasterVolume(pct);
+    });
+
+    let isMuted = false;
+    document.getElementById('btn-master-mute').onclick = () => {
+      isMuted = !isMuted;
+      document.getElementById('btn-master-mute').textContent = isMuted ? 'UNMUTE' : 'MUTE';
+      setMasterVolume(isMuted ? 0 : 75);
+    };
+
+    // Toggle Devices in Audio Room
+    document.querySelectorAll('[data-toggle]').forEach(chk => {
+      chk.addEventListener('click', () => {
+        chk.classList.toggle('checked');
+        const card = chk.closest('.device-card');
+        card.classList.toggle('active-route', chk.classList.contains('checked'));
+        updateOutputsBadge();
+      });
+    });
+
+    function updateOutputsBadge() {
+      const activeCount = document.querySelectorAll('.device-card.active-route').length;
+      document.getElementById('active-outputs-label').textContent = `${activeCount} Active Outputs In Sync`;
+    }
+
+    // Scrubber click
+    document.getElementById('scrubber-track').addEventListener('click', (e) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const pct = (e.clientX - rect.left) / rect.width;
+      currentTimeSec = Math.round(pct * durationSec);
+      updateTimeDisplay();
+    });
+
+    // Theme Toggle
+    const themeBtn = document.getElementById('btn-theme-toggle');
+    themeBtn.onclick = () => {
+      const cur = document.body.getAttribute('data-theme');
+      const next = cur === 'light' ? 'dark' : 'light';
+      document.body.setAttribute('data-theme', next);
+      themeBtn.textContent = `Theme: ${next.charAt(0).toUpperCase() + next.slice(1)}`;
+      document.querySelector('.svg-theme-play').setAttribute('fill', next === 'dark' ? '#ECEEEA' : '#171B1D');
+    };
+
+    // Reduce Motion Toggle
+    const motionBtn = document.getElementById('btn-reduce-motion');
+    motionBtn.onclick = () => {
+      reduceMotion = !reduceMotion;
+      motionBtn.textContent = `Reduce Motion: ${reduceMotion ? 'On' : 'Off'}`;
+      motionBtn.classList.toggle('active', reduceMotion);
+    };
+
+    // Replay Splash
+    document.getElementById('btn-replay-splash').onclick = runSplashChoreography;
+
+    // Scan toggle
+    const scanBtn = document.getElementById('btn-toggle-scan');
+    let isScanning = true;
+    scanBtn.onclick = () => {
+      isScanning = !isScanning;
+      scanBtn.textContent = isScanning ? 'SCANNING' : 'SCAN';
+      scanBtn.classList.toggle('active', isScanning);
+      document.getElementById('scan-status-text').textContent = isScanning ? 'Scanning BLE & local mDNS...' : 'Scan idle &bull; 2 sinks discovered';
+    };
+
+    // Track Select from Library
+    document.querySelectorAll('[data-track]').forEach(el => {
+      el.addEventListener('click', () => {
+        const title = el.getAttribute('data-track');
+        const artist = el.getAttribute('data-artist');
+        const album = el.getAttribute('data-album');
+        document.getElementById('disp-title').textContent = title;
+        document.getElementById('disp-artist').textContent = `${artist} • ${album}`;
+        currentTimeSec = 0;
+        updateTimeDisplay();
+        showScreen('view-player');
+      });
+    });
+
+    // Run Splash on initial load
+    window.addEventListener('DOMContentLoaded', () => {
+      runSplashChoreography();
+      updateTimeDisplay();
+    });
+  </script>
+</body>
+</html>

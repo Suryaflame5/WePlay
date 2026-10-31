@@ -1,0 +1,40 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+    <!-- Orbit Path -->
+    <path
+        android:strokeColor="#21CDB8"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round"
+        android:pathData="M 6.8,28.2 C 4.5,23.5 12.0,17.2 23.5,14.1 C 35.0,11.0 46.0,12.3 48.0,17.0 C 50.0,21.7 42.5,28.0 31.0,31.1 C 19.5,34.2 9.0,32.9 6.8,28.2 Z" />
+
+    <!-- Output Node 1 -->
+    <path
+        android:fillColor="#21CDB8"
+        android:pathData="M 37.5,14.5 A 2.2,2.2 0 1,1 37.5,18.9 A 2.2,2.2 0 1,1 37.5,14.5" />
+
+    <!-- Output Node 2 -->
+    <path
+        android:fillColor="#21CDB8"
+        android:pathData="M 43.5,22.0 A 2.2,2.2 0 1,1 43.5,26.4 A 2.2,2.2 0 1,1 43.5,22.0" />
+
+    <!-- Output Node 3 -->
+    <path
+        android:fillColor="#21CDB8"
+        android:pathData="M 8.5,26.0 A 2.2,2.2 0 1,1 8.5,30.4 A 2.2,2.2 0 1,1 8.5,26.0" />
+
+    <!-- Center Play Gesture (Dark mode off-white) -->
+    <path
+        android:fillColor="#ECEEEA"
+        android:pathData="M 17.0,13.5 C 17.0,12.3 18.3,11.5 19.4,12.2 L 35.2,22.7 C 36.1,23.3 36.1,24.7 35.2,25.3 L 19.4,35.8 C 18.3,36.5 17.0,35.7 17.0,34.5 Z" />
+
+    <!-- 5 Balanced Hi-Fi Waveform Bars -->
+    <path
+        android:strokeColor="#21CDB8"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:pathData="M 21.0,21.5 L 21.0,26.5 M 24.0,18.5 L 24.0,29.5 M 27.0,16.0 L 27.0,32.0 M 30.0,18.5 L 30.0,29.5 M 33.0,21.5 L 33.0,26.5" />
+</vector>

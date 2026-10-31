@@ -1,0 +1,17 @@
+<resources>
+    <!-- Base application theme using Material3 Light / NoActionBar -->
+    <style name="Theme.WePlay" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#F7F6F0</item>
+        <item name="android:navigationBarColor">#F7F6F0</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+
+    <!-- Official AndroidX Starting Theme for System SplashScreen API -->
+    <style name="Theme.WePlay.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#F7F6F0</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_weplay_mark</item>
+        <item name="windowSplashScreenAnimationDuration">850</item>
+        <item name="postSplashScreenTheme">@style/Theme.WePlay</item>
+    </style>
+</resources>

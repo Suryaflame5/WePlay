@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "WePlaySyncDiagnostics",
+  "type": "object",
+  "properties": {
+    "sessionId": { "type": "string" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "networkRttMs": { "type": "number" },
+    "clockOffsetMs": { "type": "number" },
+    "measuredDriftMs": { "type": "number" },
+    "jitterMs": { "type": "number" },
+    "packetLossRatio": { "type": "number" },
+    "underrunCount": { "type": "integer" },
+    "activeRoutes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "deviceId": { "type": "string" },
+          "transport": { "type": "string" },
+          "sampleRate": { "type": "integer" },
+          "bitDepth": { "type": "integer" }
+        }
+      }
+    }
+  }
+}
