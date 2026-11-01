@@ -75,9 +75,7 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK && result.data != null) {
-            val mpManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-            val projection = mpManager.getMediaProjection(result.resultCode, result.data!!)
-            audioShareService?.startSharing(projection)
+            audioShareService?.startSharingWithResult(result.resultCode, result.data!!)
             onProjectionApproved?.invoke()
             onProjectionApproved = null
         } else {

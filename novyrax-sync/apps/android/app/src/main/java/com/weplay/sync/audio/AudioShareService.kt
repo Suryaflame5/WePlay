@@ -13,6 +13,7 @@ import android.media.AudioFormat
 import android.media.AudioPlaybackCaptureConfiguration
 import android.media.AudioRecord
 import android.media.projection.MediaProjection
+import android.media.projection.MediaProjectionManager
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
@@ -108,6 +109,44 @@ class AudioShareService : Service() {
             bitDepth = 16,
             rttMs = 0.0
         )
+    }
+
+    fun startSharingWithResult(resultCode: Int, resultData: Intent) {
+        val notification = buildForegroundNotification("WePlay is sharing system audio with connected listeners...")
+
+        // Android 14+ (API 34+) explicit foreground service type declaration MUST precede getMediaProjection
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val fgsType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION or ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+            } else {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+            }
+            startForeground(NOTIFICATION_ID, notification, fgsType)
+        } else {
+            startForeground(NOTIFICATION_ID, notification)
+        }
+
+        // Start UDP listener socket for companion pairing
+        startNetworkDistributionServer()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                val mpManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+                val projection = mpManager.getMediaProjection(resultCode, resultData)
+                if (projection != null) {
+                    mediaProjection = projection
+                    registerProjectionLifecycle(projection)
+                    setupPlaybackCapture(projection)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _session.value = _session.value.copy(status = CaptureStatus.STOPPED)
+            }
+        } else {
+            _session.value = _session.value.copy(
+                status = CaptureStatus.CAPTURING_ACTIVE
+            )
+        }
     }
 
     fun startSharing(projection: MediaProjection?) {
