@@ -1,6 +1,5 @@
 package com.weplay.sync.ui.screens
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -34,19 +33,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.weplay.sync.shared.model.DeviceType
 import com.weplay.sync.shared.model.NearbyStream
 import com.weplay.sync.shared.model.SharingTransport
-import com.weplay.sync.ui.components.HardwareVectorGlyph
+import com.weplay.sync.ui.components.InstrumentChassisCard
 import com.weplay.sync.ui.components.TactileConsoleFader
-import com.weplay.sync.ui.components.TactileVUMeter
+import com.weplay.sync.ui.theme.AtelierChamfer
+import com.weplay.sync.ui.theme.AtelierGunmetal
+import com.weplay.sync.ui.theme.AtelierObsidian
+import com.weplay.sync.ui.theme.AtelierTextPrimary
+import com.weplay.sync.ui.theme.AtelierTextSecondary
+import com.weplay.sync.ui.theme.AtelierTray
+import com.weplay.sync.ui.theme.ElectricCobalt
+import com.weplay.sync.ui.theme.PrecisionCyan
+import com.weplay.sync.ui.theme.SignalVermilion
 import com.weplay.sync.ui.theme.WePlayTheme
 
 @Composable
@@ -68,12 +71,12 @@ fun JoinSessionScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0A0D12))
+            .background(AtelierObsidian)
             .statusBarsPadding()
             .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 12.dp)
+            .padding(horizontal = 20.dp, vertical = 10.dp)
     ) {
-        // Nav Header
+        // 1. Navigation Header
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -82,111 +85,140 @@ fun JoinSessionScreen(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
-                    .background(Color(0xFF131922))
-                    .border(1.dp, Color(0xFF263345), RoundedCornerShape(4.dp))
+                    .background(AtelierTray)
+                    .border(1.dp, AtelierChamfer, RoundedCornerShape(4.dp))
                     .clickable { onBack() }
-                    .padding(vertical = 6.dp, horizontal = 10.dp)
+                    .padding(vertical = 5.dp, horizontal = 10.dp)
             ) {
                 Text(
-                    text = "‹ ATELIER",
-                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                    color = Color(0xFFCBD5E1)
+                    text = "‹ BACK",
+                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    color = AtelierTextPrimary
                 )
             }
 
             Text(
-                text = if (isConnectedToHost) "LISTENER SYNCHRONIZED" else "DISCOVER AUDIO STREAM",
-                style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp, fontSize = 9.sp),
-                color = if (isConnectedToHost) Color(0xFF00E5C8) else Color(0xFF64748B)
+                text = if (isConnectedToHost) "LISTENER ACTIVE // SYNC LOCKED" else "RECEIVER EXPLORATION CONSOLE",
+                style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 1.2.sp),
+                color = if (isConnectedToHost) PrecisionCyan else ElectricCobalt
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         if (!isConnectedToHost) {
             // Not connected: Search & Join Flow
             Text(
-                text = "Join an audio stream",
-                style = WePlayTheme.typography.displayLarge.copy(fontSize = 28.sp, letterSpacing = (-0.6).sp),
-                color = Color(0xFFF8FAFC)
+                text = "Join an Audio Stream",
+                style = WePlayTheme.typography.displayLarge.copy(fontSize = 24.sp),
+                color = AtelierTextPrimary
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = "Receive lossless synchronized audio broadcast from another phone on your network.",
-                style = WePlayTheme.typography.bodyMedium.copy(fontSize = 12.sp),
-                color = Color(0xFF94A3B8)
+                text = "Listen to an audio broadcast from another phone using your headphones.",
+                style = WePlayTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                color = AtelierTextSecondary
             )
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // Method 1: Architectural QR Scanner Reticle Trigger
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Color(0xFF111722))
-                    .border(1.dp, Color(0xFF1E2838), RoundedCornerShape(10.dp))
-                    .clickable { onConnectByCode("WP-4829") }
-                    .padding(16.dp)
+            // 2. Optical Reticle QR Camera Trigger Chassis
+            InstrumentChassisCard(
+                label = "OPTICAL MATRIX SCANNER",
+                statusIndicator = PrecisionCyan
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Precision Reticle Box
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(AtelierTray)
+                        .border(1.dp, AtelierChamfer, RoundedCornerShape(6.dp))
+                        .clickable {
+                            if (nearbyStreams.isNotEmpty()) onConnectToStream(nearbyStreams.first())
+                        }
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Box(
                         modifier = Modifier
-                            .size(46.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(Color(0xFF192230)),
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(AtelierGunmetal)
+                            .border(1.dp, PrecisionCyan, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Canvas(modifier = Modifier.size(24.dp)) {
-                            val w = size.width
-                            val h = size.height
-                            val arm = 6.dp.toPx()
-                            val stroke = 1.5.dp.toPx()
-                            val c = Color(0xFF00E5C8)
-
-                            // Top-left
-                            drawLine(c, Offset(0f, 0f), Offset(arm, 0f), stroke)
-                            drawLine(c, Offset(0f, 0f), Offset(0f, arm), stroke)
-                            // Top-right
-                            drawLine(c, Offset(w, 0f), Offset(w - arm, 0f), stroke)
-                            drawLine(c, Offset(w, 0f), Offset(w, arm), stroke)
-                            // Bottom-left
-                            drawLine(c, Offset(0f, h), Offset(arm, h), stroke)
-                            drawLine(c, Offset(0f, h), Offset(0f, h - arm), stroke)
-                            // Bottom-right
-                            drawLine(c, Offset(w, h), Offset(w - arm, h), stroke)
-                            drawLine(c, Offset(w, h), Offset(w, h - arm), stroke)
-                        }
+                        Text(text = "⛶", fontSize = 18.sp, color = PrecisionCyan)
                     }
 
-                    Spacer(modifier = Modifier.width(14.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Scan Host QR Code",
-                            style = WePlayTheme.typography.titleMedium.copy(fontSize = 14.sp),
-                            color = Color(0xFFF1F5F9)
+                            text = "Scan Host Broadcast Matrix",
+                            style = WePlayTheme.typography.titleMedium.copy(fontSize = 13.sp),
+                            color = AtelierTextPrimary
                         )
-                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Point camera at host's WePlay screen for instant pairing",
-                            style = WePlayTheme.typography.bodyMedium.copy(fontSize = 11.sp),
-                            color = Color(0xFF64748B)
+                            text = "Point camera at host screen for zero-touch pairing",
+                            style = WePlayTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                            color = AtelierTextSecondary
                         )
                     }
+
+                    Text(
+                        text = "SCAN ›",
+                        style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                        color = PrecisionCyan
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 3. Manual PIN Input Chassis
+            InstrumentChassisCard(
+                label = "MANUAL SESSION PIN",
+                statusIndicator = ElectricCobalt
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = enteredCode,
+                        onValueChange = { if (it.length <= 6) enteredCode = it.uppercase() },
+                        modifier = Modifier.weight(1f),
+                        placeholder = {
+                            Text(
+                                text = "e.g. WP-4829",
+                                style = WePlayTheme.typography.tabularMetric.copy(fontSize = 13.sp),
+                                color = AtelierTextSecondary
+                            )
+                        },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters)
+                    )
+
+                    Spacer(modifier = Modifier.width(10.dp))
 
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(4.dp))
-                            .background(Color(0xFF003830))
-                            .border(1.dp, Color(0xFF00E5C8), RoundedCornerShape(4.dp))
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                            .background(if (enteredCode.length >= 4) SignalVermilion else AtelierTray)
+                            .border(1.dp, if (enteredCode.length >= 4) SignalVermilion else AtelierChamfer, RoundedCornerShape(4.dp))
+                            .clickable(enabled = enteredCode.length >= 4) {
+                                onConnectByCode(enteredCode)
+                            }
+                            .padding(horizontal = 14.dp, vertical = 14.dp),
+                        contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "SCAN",
-                            style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                            color = Color(0xFF00E5C8)
+                            text = "JOIN",
+                            style = WePlayTheme.typography.labelSmall.copy(
+                                fontSize = 10.sp,
+                                letterSpacing = 1.sp,
+                                color = if (enteredCode.length >= 4) Color.White else AtelierTextSecondary
+                            )
                         )
                     }
                 }
@@ -194,64 +226,13 @@ fun JoinSessionScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Method 2: Manual 6-Character Session PIN
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Color(0xFF111722))
-                    .border(1.dp, Color(0xFF1E2838), RoundedCornerShape(10.dp))
-                    .padding(16.dp)
-            ) {
-                Column {
-                    Text(
-                        text = "MANUAL SESSION PIN",
-                        style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp, fontSize = 9.sp),
-                        color = Color(0xFF64748B)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        OutlinedTextField(
-                            value = enteredCode,
-                            onValueChange = { if (it.length <= 7) enteredCode = it.uppercase() },
-                            placeholder = { Text("WP-4829", style = WePlayTheme.typography.tabularMetric.copy(color = Color(0xFF475569))) },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
-                            modifier = Modifier.weight(1f)
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(
-                                    if (enteredCode.length >= 4) Color(0xFF00E5C8) else Color(0xFF1E293B)
-                                )
-                                .clickable(enabled = enteredCode.length >= 4) {
-                                    onConnectByCode(enteredCode)
-                                }
-                                .padding(horizontal = 16.dp, vertical = 14.dp)
-                        ) {
-                            Text(
-                                text = "CONNECT",
-                                style = WePlayTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                                color = if (enteredCode.length >= 4) Color(0xFF0A0D12) else Color(0xFF64748B)
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Nearby Audio Streams
+            // 4. Nearby Streams Roster
             Text(
-                text = "NEARBY ACTIVE BROADCASTS",
-                style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp, fontSize = 9.sp),
-                color = Color(0xFF64748B)
+                text = "NEARBY BROADCASTS DETECTED",
+                style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 1.sp),
+                color = AtelierTextSecondary
             )
+
             Spacer(modifier = Modifier.height(8.dp))
 
             LazyColumn(
@@ -263,23 +244,23 @@ fun JoinSessionScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Color(0xFF111722))
-                                .border(1.dp, Color(0xFF1E2838), RoundedCornerShape(8.dp))
-                                .padding(18.dp),
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(AtelierGunmetal)
+                                .border(1.dp, AtelierChamfer, RoundedCornerShape(6.dp))
+                                .padding(20.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
-                                    text = "SCANNING LOCAL WI-FI FREQUENCIES",
+                                    text = "SCANNING LOCAL WI-FI SUBNET",
                                     style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.sp, fontSize = 9.sp),
-                                    color = Color(0xFF64748B)
+                                    color = AtelierTextSecondary
                                 )
-                                Spacer(modifier = Modifier.height(6.dp))
+                                Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = "Ensure the host phone has tapped 'Start Broadcast' on the same Wi-Fi subnet. Or enter the 6-character PIN above.",
-                                    style = WePlayTheme.typography.bodyMedium.copy(fontSize = 11.sp, lineHeight = 16.sp),
-                                    color = Color(0xFF94A3B8),
+                                    text = "Ensure the host phone has tapped 'Start Audio Broadcast' on the same network.",
+                                    style = WePlayTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                    color = AtelierTextSecondary,
                                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                 )
                             }
@@ -297,149 +278,104 @@ fun JoinSessionScreen(
         } else {
             // Connected Listener Session Interface
             Text(
-                text = "Listening to audio stream",
-                style = WePlayTheme.typography.displayLarge.copy(fontSize = 26.sp, letterSpacing = (-0.6).sp),
-                color = Color(0xFFF8FAFC)
+                text = "Streaming Audio In Sync",
+                style = WePlayTheme.typography.displayLarge.copy(fontSize = 24.sp),
+                color = AtelierTextPrimary
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = "Connected to ${connectedHostName ?: "Host"} • ${connectedSessionCode ?: "WP-4829"}",
-                style = WePlayTheme.typography.bodyMedium.copy(fontSize = 12.sp),
-                color = Color(0xFF00E5C8)
+                text = "Connected to ${connectedHostName ?: "Host"} // Session ${connectedSessionCode ?: "WP-4829"}",
+                style = WePlayTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                color = PrecisionCyan
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Receiver Output Status Card
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFF111722))
-                    .border(1.dp, Color(0xFF1E2838), RoundedCornerShape(8.dp))
-                    .padding(14.dp)
+            // Receiver Output Status Chassis
+            InstrumentChassisCard(
+                label = "LOCAL RECEIVER STATUS",
+                statusIndicator = PrecisionCyan
             ) {
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(AtelierTray)
+                            .border(1.dp, PrecisionCyan, RoundedCornerShape(4.dp)),
+                        contentAlignment = Alignment.Center
                     ) {
+                        Text(text = "🎧", fontSize = 16.sp)
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "ACTIVE LOCAL OUTPUT SINK",
-                            style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.sp, fontSize = 9.sp),
-                            color = Color(0xFF64748B)
+                            text = "Playback Route: Bluetooth Headphones",
+                            style = WePlayTheme.typography.titleMedium.copy(fontSize = 13.sp),
+                            color = AtelierTextPrimary
                         )
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(Color(0xFF003830))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = "LPCM 48kHz SYNCHRONIZED",
-                                style = WePlayTheme.typography.tabularMetric.copy(fontSize = 8.sp),
-                                color = Color(0xFF00E5C8)
-                            )
-                        }
+                        Text(
+                            text = "Direct hardware output • Low-latency sync buffer: 28ms",
+                            style = WePlayTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                            color = AtelierTextSecondary
+                        )
                     }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(Color(0xFF192230)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            HardwareVectorGlyph(type = DeviceType.HEADPHONES, tint = Color(0xFF00E5C8))
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = "Sony WF-1000XM5",
-                                style = WePlayTheme.typography.titleMedium.copy(fontSize = 14.sp),
-                                color = Color(0xFFF1F5F9)
-                            )
-                            Text(
-                                text = "Bluetooth A2DP • Low-Latency AudioTrack Ring Buffer",
-                                style = WePlayTheme.typography.bodyMedium.copy(fontSize = 10.sp),
-                                color = Color(0xFF64748B)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-                    TactileVUMeter(level = 0.70f, isPlaying = true)
                 }
             }
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Dedicated Listener Fader
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFF111722))
-                    .border(1.dp, Color(0xFF1E2838), RoundedCornerShape(8.dp))
-                    .padding(14.dp)
+            // Local Listener Console Fader
+            InstrumentChassisCard(
+                label = "PERSONAL ATTENUATION",
+                statusIndicator = SignalVermilion
             ) {
                 TactileConsoleFader(
                     value = localVolume,
                     onValueChange = { localVolume = it },
-                    label = "PERSONAL LISTENER ATTENUATION"
+                    label = "LOCAL EARBUD GAIN"
                 )
             }
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Lip-Sync Video Alignment Calibration
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFF111722))
-                    .border(1.dp, Color(0xFF1E2838), RoundedCornerShape(8.dp))
-                    .padding(14.dp)
+            // Lip-Sync Video Delay Alignment
+            InstrumentChassisCard(
+                label = "VIDEO LIP-SYNC ALIGNMENT",
+                statusIndicator = ElectricCobalt
             ) {
-                Column {
-                    Text(
-                        text = "LIP-SYNC VIDEO ALIGNMENT",
-                        style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.sp, fontSize = 9.sp),
-                        color = Color(0xFF64748B)
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "Offset audio timing to match host video screen exactly",
-                        style = WePlayTheme.typography.bodyMedium.copy(fontSize = 10.sp),
-                        color = Color(0xFF94A3B8)
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        listOf(0, 15, 30, 45).forEach { ms ->
-                            val isSel = syncOffsetMs == ms
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(if (isSel) Color(0xFF00E5C8) else Color(0xFF192230))
-                                    .border(1.dp, if (isSel) Color(0xFF00E5C8) else Color(0xFF263345), RoundedCornerShape(4.dp))
-                                    .clickable { syncOffsetMs = ms }
-                                    .padding(vertical = 8.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "+${ms}ms",
-                                    style = WePlayTheme.typography.tabularMetric.copy(fontSize = 11.sp),
-                                    color = if (isSel) Color(0xFF0A0D12) else Color(0xFFCBD5E1)
-                                )
-                            }
+                Text(
+                    text = "Calibrate audio delay (+ms) if watching a video on the host screen",
+                    style = WePlayTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                    color = AtelierTextSecondary
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf(0, 15, 30, 45).forEach { ms ->
+                        val isSel = syncOffsetMs == ms
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(if (isSel) SignalVermilion else AtelierTray)
+                                .border(1.dp, if (isSel) SignalVermilion else AtelierChamfer, RoundedCornerShape(4.dp))
+                                .clickable { syncOffsetMs = ms }
+                                .padding(vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "+${ms}ms",
+                                style = WePlayTheme.typography.tabularMetric.copy(fontSize = 11.sp),
+                                color = if (isSel) Color.White else AtelierTextPrimary
+                            )
                         }
                     }
                 }
@@ -447,24 +383,23 @@ fun JoinSessionScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Leave Stream Button
+            // Disconnect Button
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(6.dp))
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(Color(0xFFFF453A), Color(0xFFD63031))
-                        )
-                    )
+                    .background(Color(0xFFFF3B30))
                     .clickable { onLeaveSession() }
                     .padding(vertical = 15.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "DISCONNECT FROM STREAM",
-                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 11.sp, letterSpacing = 0.8.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
-                    color = Color.White
+                    text = "DISCONNECT FROM BROADCAST",
+                    style = WePlayTheme.typography.labelSmall.copy(
+                        fontSize = 11.sp,
+                        letterSpacing = 1.sp,
+                        color = Color.White
+                    )
                 )
             }
         }
@@ -479,10 +414,10 @@ fun NearbyStreamCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFF141922))
-            .border(1.dp, Color(0xFF222B38), RoundedCornerShape(8.dp))
-            .padding(14.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .background(AtelierGunmetal)
+            .border(1.dp, AtelierChamfer, RoundedCornerShape(6.dp))
+            .padding(12.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -490,14 +425,14 @@ fun NearbyStreamCard(
         ) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(Color(0xFF1E2838)),
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(AtelierTray),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = if (stream.transport == SharingTransport.BLUETOOTH_AURACAST) "📻" else "📡",
-                    fontSize = 18.sp
+                    fontSize = 16.sp
                 )
             }
 
@@ -506,28 +441,28 @@ fun NearbyStreamCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = stream.streamName,
-                    style = WePlayTheme.typography.titleMedium.copy(fontSize = 14.sp),
-                    color = Color(0xFFF1F5F9)
+                    style = WePlayTheme.typography.titleMedium.copy(fontSize = 13.sp),
+                    color = AtelierTextPrimary
                 )
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(1.dp))
                 Text(
                     text = "${stream.hostName} • ${stream.transport.badge} • ${stream.listenerCount} listening",
-                    style = WePlayTheme.typography.bodyMedium.copy(fontSize = 11.sp),
-                    color = Color(0xFF777D86)
+                    style = WePlayTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                    color = AtelierTextSecondary
                 )
             }
 
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(Color(0xFF00E5C8))
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(SignalVermilion)
                     .clickable { onConnect() }
-                    .padding(horizontal = 14.dp, vertical = 8.dp)
+                    .padding(horizontal = 12.dp, vertical = 7.dp)
             ) {
                 Text(
                     text = "LISTEN",
-                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                    color = Color(0xFF0B1017)
+                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 0.8.sp),
+                    color = Color.White
                 )
             }
         }

@@ -44,7 +44,17 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.weplay.sync.shared.model.AudioOutputDevice
+import com.weplay.sync.ui.components.InstrumentChassisCard
 import com.weplay.sync.ui.components.OutputRouteCard
+import com.weplay.sync.ui.theme.AtelierChamfer
+import com.weplay.sync.ui.theme.AtelierGunmetal
+import com.weplay.sync.ui.theme.AtelierObsidian
+import com.weplay.sync.ui.theme.AtelierTextPrimary
+import com.weplay.sync.ui.theme.AtelierTextSecondary
+import com.weplay.sync.ui.theme.AtelierTray
+import com.weplay.sync.ui.theme.ElectricCobalt
+import com.weplay.sync.ui.theme.PrecisionCyan
+import com.weplay.sync.ui.theme.SignalVermilion
 import com.weplay.sync.ui.theme.WePlayTheme
 import kotlin.math.cos
 import kotlin.math.sin
@@ -76,10 +86,10 @@ fun DeviceDiscoveryScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0C0F14))
+            .background(AtelierObsidian)
             .statusBarsPadding()
             .navigationBarsPadding()
-            .padding(horizontal = 22.dp, vertical = 10.dp)
+            .padding(horizontal = 20.dp, vertical = 10.dp)
     ) {
         // 1. Navigation Header
         Row(
@@ -90,50 +100,50 @@ fun DeviceDiscoveryScreen(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
-                    .background(Color(0xFF19202A))
-                    .border(1.dp, Color(0xFF283442), RoundedCornerShape(4.dp))
+                    .background(AtelierTray)
+                    .border(1.dp, AtelierChamfer, RoundedCornerShape(4.dp))
                     .clickable { onBack() }
                     .padding(horizontal = 10.dp, vertical = 5.dp)
             ) {
                 Text(
                     text = "‹ BACK",
                     style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                    color = Color(0xFFF1F5F9)
+                    color = AtelierTextPrimary
                 )
             }
 
             Text(
-                text = "HARDWARE DISCOVERY & PROBING",
-                style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 1.2.sp),
-                color = Color(0xFF777D86)
+                text = "HARDWARE DISCOVERY & SENSOR PROBE",
+                style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 1.2.sp),
+                color = ElectricCobalt
             )
 
             // Scan Trigger Button
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
-                    .background(if (isScanning) Color(0xFFFF9500) else Color(0xFF00E5C8))
+                    .background(if (isScanning) Color(0xFFFF9500) else SignalVermilion)
                     .clickable { if (isScanning) onStopScan() else onStartScan() }
                     .padding(horizontal = 10.dp, vertical = 5.dp)
             ) {
                 Text(
                     text = if (isScanning) "STOPPING" else "SCANNING",
                     style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 0.8.sp),
-                    color = Color(0xFF0A0D12)
+                    color = Color.White
                 )
             }
         }
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // 2. Animated Sonar Radar Viewport (Acoustic scanning)
+        // 2. Animated Sonar Radar Viewport
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(160.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(Color(0xFF111722))
-                .border(1.dp, Color(0xFF1E293B), RoundedCornerShape(10.dp)),
+                .height(150.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(AtelierTray)
+                .border(1.dp, AtelierChamfer, RoundedCornerShape(8.dp)),
             contentAlignment = Alignment.Center
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
@@ -143,7 +153,7 @@ fun DeviceDiscoveryScreen(
                 // Concentric Range Rings
                 listOf(0.35f, 0.65f, 0.95f).forEach { fraction ->
                     drawCircle(
-                        color = Color(0xFF1E293B),
+                        color = AtelierChamfer,
                         radius = maxRadius * fraction,
                         center = center,
                         style = Stroke(width = 1.dp.toPx())
@@ -152,13 +162,13 @@ fun DeviceDiscoveryScreen(
 
                 // Crosshairs
                 drawLine(
-                    color = Color(0xFF1E293B),
+                    color = AtelierChamfer,
                     start = Offset(center.x - maxRadius, center.y),
                     end = Offset(center.x + maxRadius, center.y),
                     strokeWidth = 1.dp.toPx()
                 )
                 drawLine(
-                    color = Color(0xFF1E293B),
+                    color = AtelierChamfer,
                     start = Offset(center.x, center.y - maxRadius),
                     end = Offset(center.x, center.y + maxRadius),
                     strokeWidth = 1.dp.toPx()
@@ -172,7 +182,7 @@ fun DeviceDiscoveryScreen(
                 )
                 drawLine(
                     brush = Brush.radialGradient(
-                        listOf(Color(0xFF00E5C8), Color(0x0000E5C8)),
+                        listOf(ElectricCobalt, Color(0x001A62FF)),
                         center = center,
                         radius = maxRadius
                     ),
@@ -191,19 +201,19 @@ fun DeviceDiscoveryScreen(
                     val by = center.y + (sin(bRad) * dist).toFloat()
 
                     drawCircle(
-                        color = Color(0xFF00E5C8).copy(alpha = 0.3f),
+                        color = SignalVermilion.copy(alpha = 0.35f),
                         radius = 8.dp.toPx(),
                         center = Offset(bx, by)
                     )
                     drawCircle(
-                        color = Color(0xFF00E5C8),
+                        color = SignalVermilion,
                         radius = 3.5.dp.toPx(),
                         center = Offset(bx, by)
                     )
                 }
 
                 // Center Host Sensor
-                drawCircle(color = Color(0xFF00E5C8), radius = 5.dp.toPx(), center = center)
+                drawCircle(color = SignalVermilion, radius = 5.dp.toPx(), center = center)
             }
 
             // Status Overlay
@@ -217,26 +227,26 @@ fun DeviceDiscoveryScreen(
                     modifier = Modifier
                         .size(6.dp)
                         .clip(CircleShape)
-                        .background(if (isScanning) Color(0xFF00E5C8) else Color(0xFFFF9500))
+                        .background(if (isScanning) SignalVermilion else AtelierTextSecondary)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = if (isScanning) "SONAR PROBE ACTIVE • BLUETOOTH LE & MDNS" else "STANDBY • ${devices.size} HARDWARE SINKS FOUND",
                     style = WePlayTheme.typography.labelSmall.copy(fontSize = 8.sp, letterSpacing = 1.sp),
-                    color = Color(0xFFCBD5E1)
+                    color = AtelierTextPrimary
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // 3. Filter Selector Tabs
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(6.dp))
-                .background(Color(0xFF141922))
-                .border(1.dp, Color(0xFF222B38), RoundedCornerShape(6.dp))
+                .background(AtelierTray)
+                .border(1.dp, AtelierChamfer, RoundedCornerShape(6.dp))
                 .padding(3.dp)
         ) {
             listOf("ALL", "AURACAST", "BT LE", "WI-FI").forEachIndexed { index, label ->
@@ -245,7 +255,7 @@ fun DeviceDiscoveryScreen(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(4.dp))
-                        .background(if (isSelected) Color(0xFF00E5C8) else Color.Transparent)
+                        .background(if (isSelected) SignalVermilion else Color.Transparent)
                         .clickable { selectedFilter = index }
                         .padding(vertical = 6.dp),
                     contentAlignment = Alignment.Center
@@ -254,49 +264,42 @@ fun DeviceDiscoveryScreen(
                         text = label,
                         style = WePlayTheme.typography.labelSmall.copy(
                             fontSize = 9.sp,
-                            color = if (isSelected) Color(0xFF0A0D12) else Color(0xFF94A3B8)
+                            color = if (isSelected) Color.White else AtelierTextSecondary
                         )
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        // 4. Pixel Auracast Native Sheet Callout Card (Reference 5)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(8.dp))
-                .background(Color(0xFF141A23))
-                .border(1.dp, Color(0xFF242E3B), RoundedCornerShape(8.dp))
-                .padding(12.dp)
+        // 4. Pixel Auracast Native Sheet Callout Card
+        InstrumentChassisCard(
+            label = "NEARBY AURACAST STREAMS",
+            statusIndicator = ElectricCobalt
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
                         .size(32.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF1A2330))
-                        .border(1.dp, Color(0xFF00E5C8), CircleShape),
+                        .background(AtelierTray)
+                        .border(1.dp, ElectricCobalt, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "📡",
-                        style = WePlayTheme.typography.titleMedium.copy(fontSize = 14.sp)
-                    )
+                    Text(text = "📡", fontSize = 14.sp)
                 }
                 Spacer(modifier = Modifier.width(10.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Nearby Auracast Broadcasts",
+                        text = "Auracast Broadcast Discovery",
                         style = WePlayTheme.typography.titleMedium.copy(fontSize = 12.sp),
-                        color = Color(0xFFF1F5F9)
+                        color = AtelierTextPrimary
                     )
                     Text(
-                        text = "Connect compatible LE Audio headphones directly or join existing WePlay broadcasts.",
+                        text = "Connect compatible LE Audio headphones directly or bind into existing WePlay streams.",
                         style = WePlayTheme.typography.bodySmall.copy(fontSize = 10.sp),
-                        color = Color(0xFF777D86)
+                        color = AtelierTextSecondary
                     )
                 }
             }
@@ -307,7 +310,7 @@ fun DeviceDiscoveryScreen(
         // 5. Discovered Audio Sinks
         LazyColumn(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(devices, key = { it.id }) { device ->
                 OutputRouteCard(

@@ -53,9 +53,17 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.weplay.sync.shared.model.AudioOutputDevice
-import com.weplay.sync.shared.model.TransportType
-import com.weplay.sync.ui.components.ArtworkPalettes
-import com.weplay.sync.ui.components.DevialetAcousticDial
+import com.weplay.sync.ui.components.PlanetaryRotaryDial
+import com.weplay.sync.ui.theme.AtelierChamfer
+import com.weplay.sync.ui.theme.AtelierGunmetal
+import com.weplay.sync.ui.theme.AtelierObsidian
+import com.weplay.sync.ui.theme.AtelierTextPrimary
+import com.weplay.sync.ui.theme.AtelierTextSecondary
+import com.weplay.sync.ui.theme.AtelierTray
+import com.weplay.sync.ui.theme.CalibratedGold
+import com.weplay.sync.ui.theme.ElectricCobalt
+import com.weplay.sync.ui.theme.PrecisionCyan
+import com.weplay.sync.ui.theme.SignalVermilion
 import com.weplay.sync.ui.theme.WePlayTheme
 
 data class PlayerTrackState(
@@ -83,11 +91,9 @@ fun NowPlayingScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val palette = ArtworkPalettes.Charcoal
-
-    // View mode: 0 = Art-Directed Artwork, 1 = Hi-Fi Equipment Acoustic Dial (Devialet inspired), 2 = Vinyl Disc
+    // 0 = ART-DIRECTED STUDIO, 1 = HOROLOGICAL ROTARY DIAL, 2 = VINYL DECK
     var viewMode by remember { mutableIntStateOf(0) }
-    var dialVolume by remember { mutableIntStateOf(75) }
+    var dialVolume by remember { mutableIntStateOf(78) }
     var isFavorite by remember { mutableStateOf(false) }
     var isShuffle by remember { mutableStateOf(false) }
     var isRepeat by remember { mutableStateOf(false) }
@@ -118,19 +124,10 @@ fun NowPlayingScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0F1318))
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFF27B58).copy(alpha = 0.15f),
-                        Color(0xFF0F1318).copy(alpha = 0.95f),
-                        Color(0xFF0A0D12)
-                    )
-                )
-            )
+            .background(AtelierObsidian)
             .statusBarsPadding()
             .navigationBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 10.dp)
+            .padding(horizontal = 20.dp, vertical = 10.dp)
     ) {
         Column(
             modifier = Modifier
@@ -138,7 +135,7 @@ fun NowPlayingScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 1. Top Atelier Navigation Bar
+            // 1. Top Navigation Bar
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -147,68 +144,70 @@ fun NowPlayingScreen(
                 Box(
                     modifier = Modifier
                         .size(36.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFF19202A))
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(AtelierTray)
+                        .border(1.dp, AtelierChamfer, RoundedCornerShape(4.dp))
                         .clickable { onBack() },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "‹",
-                        style = WePlayTheme.typography.displayLarge.copy(fontSize = 22.sp),
-                        color = Color(0xFFF1F5F9)
+                        style = WePlayTheme.typography.displayLarge.copy(fontSize = 20.sp),
+                        color = AtelierTextPrimary
                     )
                 }
 
                 // Center Title with Mode Indicator
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "NOW PLAYING",
-                        style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 1.2.sp),
-                        color = Color(0xFF00E5C8)
+                        text = "LISTENING CHAMBER",
+                        style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 1.4.sp),
+                        color = SignalVermilion
                     )
                     Text(
                         text = when (viewMode) {
-                            1 -> "HI-FI ACOUSTIC DIAL"
-                            2 -> "VINYL DECK"
-                            else -> "ART-DIRECTED STUDIO"
+                            1 -> "PLANETARY HOROLOGY DIAL"
+                            2 -> "VINYL TRANSPORT DECK"
+                            else -> "ART-DIRECTED STUDIO MASTER"
                         },
-                        style = WePlayTheme.typography.bodySmall.copy(fontSize = 10.sp),
-                        color = Color(0xFF777D86)
+                        style = WePlayTheme.typography.bodySmall.copy(fontSize = 9.sp),
+                        color = AtelierTextSecondary
                     )
                 }
 
                 Box(
                     modifier = Modifier
                         .size(36.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFF19202A))
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(AtelierTray)
+                        .border(1.dp, AtelierChamfer, RoundedCornerShape(4.dp))
                         .clickable { onOpenQueue() },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "≡",
-                        style = WePlayTheme.typography.titleMedium.copy(fontSize = 18.sp),
-                        color = Color(0xFFF1F5F9)
+                        style = WePlayTheme.typography.titleMedium.copy(fontSize = 16.sp),
+                        color = AtelierTextPrimary
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // 2. View Mode Switcher Pill (ARTWORK / DIAL / VINYL)
+            // 2. View Mode Switcher
             Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(6.dp))
-                    .background(Color(0xFF151C25))
-                    .border(1.dp, Color(0xFF243040), RoundedCornerShape(6.dp))
+                    .background(AtelierTray)
+                    .border(1.dp, AtelierChamfer, RoundedCornerShape(6.dp))
                     .padding(3.dp)
             ) {
-                listOf("ARTWORK", "HI-FI DIAL", "VINYL").forEachIndexed { index, label ->
+                listOf("MASTER ART", "HOROLOGY DIAL", "VINYL").forEachIndexed { index, label ->
                     val isSelected = viewMode == index
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(4.dp))
-                            .background(if (isSelected) Color(0xFF00E5C8) else Color.Transparent)
+                            .background(if (isSelected) SignalVermilion else Color.Transparent)
                             .clickable { viewMode = index }
                             .padding(horizontal = 14.dp, vertical = 6.dp)
                     ) {
@@ -217,7 +216,7 @@ fun NowPlayingScreen(
                             style = WePlayTheme.typography.labelSmall.copy(
                                 fontSize = 9.sp,
                                 letterSpacing = 0.8.sp,
-                                color = if (isSelected) Color(0xFF0B1017) else Color(0xFF94A3B8)
+                                color = if (isSelected) Color.White else AtelierTextSecondary
                             )
                         )
                     }
@@ -226,63 +225,63 @@ fun NowPlayingScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 3. Central Interactive Presentation Box
+            // 3. Central Interactive Object Viewport
             when (viewMode) {
                 1 -> {
-                    // Devialet Phantom / Bang & Olufsen-Style Acoustic Rotary Dial
-                    DevialetAcousticDial(
-                        volumePercent = dialVolume,
-                        onVolumeChange = { dialVolume = it },
-                        modifier = Modifier.padding(vertical = 10.dp)
+                    // Horological Planetary Rotary Dial
+                    PlanetaryRotaryDial(
+                        valuePercent = dialVolume,
+                        onValueChange = { dialVolume = it },
+                        modifier = Modifier.padding(vertical = 8.dp)
                     )
                 }
                 2 -> {
-                    // Hi-Fi Vinyl Disc Deck
+                    // Hi-Fi Vinyl Deck
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(1.1f)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(Color(0xFF141920))
-                            .border(1.dp, Color(0xFF222C3A), RoundedCornerShape(14.dp)),
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(AtelierGunmetal)
+                            .border(1.dp, AtelierChamfer, RoundedCornerShape(10.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(220.dp)
+                                .size(210.dp)
                                 .rotate(currentRotation)
                                 .clip(CircleShape)
                                 .background(
                                     Brush.radialGradient(
                                         colors = listOf(
-                                            Color(0xFF2A3442),
-                                            Color(0xFF121720),
-                                            Color(0xFF2A3442),
-                                            Color(0xFF0B0E13)
+                                            AtelierTray,
+                                            AtelierObsidian,
+                                            AtelierTray,
+                                            Color(0xFF070A0F)
                                         )
                                     )
                                 )
-                                .border(2.dp, Color(0xFF334155), CircleShape),
+                                .border(2.dp, AtelierChamfer, CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(76.dp)
+                                    .size(72.dp)
                                     .clip(CircleShape)
-                                    .background(Color(0xFFF27B58))
-                                    .border(2.dp, Color(0xFFF1F5F9), CircleShape),
+                                    .background(SignalVermilion)
+                                    .border(2.dp, Color.White, CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(
                                         text = "WEPLAY",
                                         style = WePlayTheme.typography.labelSmall.copy(fontSize = 8.sp, letterSpacing = 1.sp),
-                                        color = Color(0xFF0E131A)
+                                        color = Color.White
                                     )
                                     Text(
                                         text = "96k / 24b",
                                         style = WePlayTheme.typography.tabularMetric.copy(fontSize = 9.sp),
-                                        color = Color(0xFF0E131A)
+                                        color = Color.White
                                     )
                                 }
                             }
@@ -290,14 +289,14 @@ fun NowPlayingScreen(
                     }
                 }
                 else -> {
-                    // Art-Directed Music Artwork Canvas (Brambles Charcoal Sliced Woodcut)
+                    // Sliced Woodcut Charcoal Master
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(1f)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(Color(0xFF13171F))
-                            .border(1.dp, Color(0xFF232D3B), RoundedCornerShape(14.dp)),
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(AtelierGunmetal)
+                            .border(1.dp, AtelierChamfer, RoundedCornerShape(10.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Canvas(
@@ -309,7 +308,7 @@ fun NowPlayingScreen(
                             val maxRadius = size.width / 2f * 0.92f
 
                             drawCircle(
-                                color = Color(0xFFE2E0D8),
+                                color = Color(0xFFDEDBD2),
                                 radius = maxRadius,
                                 center = center
                             )
@@ -348,25 +347,25 @@ fun NowPlayingScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // 4. Track Metadata & Favorite Row
+            // 4. Track Metadata & Studio Tag
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
                     modifier = Modifier
-                        .size(38.dp)
+                        .size(36.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF161C24))
+                        .background(AtelierTray)
                         .clickable { isFavorite = !isFavorite },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = if (isFavorite) "♥" else "♡",
-                        style = WePlayTheme.typography.displayLarge.copy(fontSize = 20.sp),
-                        color = if (isFavorite) Color(0xFFF27B58) else Color(0xFF777D86)
+                        style = WePlayTheme.typography.displayLarge.copy(fontSize = 18.sp),
+                        color = if (isFavorite) SignalVermilion else AtelierTextSecondary
                     )
                 }
 
@@ -377,35 +376,35 @@ fun NowPlayingScreen(
                     Text(
                         text = trackState.title,
                         style = WePlayTheme.typography.displayLarge.copy(fontSize = 22.sp),
-                        color = Color(0xFFF1F5F9)
+                        color = AtelierTextPrimary
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(1.dp))
                     Text(
                         text = "${trackState.artist} • ${trackState.album}",
-                        style = WePlayTheme.typography.bodyMedium.copy(fontSize = 12.sp),
-                        color = Color(0xFF94A3B8)
+                        style = WePlayTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                        color = AtelierTextSecondary
                     )
                 }
 
-                // High-Res Audio Badge
+                // Lossless Calibrated Gold Badge
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(Color(0xFF161C24))
-                        .border(1.dp, Color(0xFF00E5C8), RoundedCornerShape(4.dp))
-                        .padding(horizontal = 7.dp, vertical = 4.dp)
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(AtelierTray)
+                        .border(1.dp, CalibratedGold, RoundedCornerShape(3.dp))
+                        .padding(horizontal = 7.dp, vertical = 3.dp)
                 ) {
                     Text(
                         text = "FLAC 96/24",
                         style = WePlayTheme.typography.tabularMetric.copy(fontSize = 8.sp),
-                        color = Color(0xFF00E5C8)
+                        color = CalibratedGold
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // 5. Tactile Waveform Amplitude Scrubber
+            // 5. Tactile Waveform Scrubber
             var scrubberWidthPx by remember { mutableFloatStateOf(1f) }
             val progressFraction = (trackState.currentPositionMs.toFloat() / trackState.durationMs.coerceAtLeast(1L)).coerceIn(0f, 1f)
 
@@ -413,9 +412,9 @@ fun NowPlayingScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(36.dp)
+                        .height(34.dp)
                         .clip(RoundedCornerShape(6.dp))
-                        .background(Color(0xFF141922))
+                        .background(AtelierTray)
                         .padding(horizontal = 6.dp)
                         .onSizeChanged { scrubberWidthPx = it.width.toFloat().coerceAtLeast(1f) }
                         .pointerInput(Unit) {
@@ -430,26 +429,26 @@ fun NowPlayingScreen(
                         val count = waveformAmplitudes.size
                         val totalW = size.width
                         val maxH = size.height
-                        val barW = 4.dp.toPx()
+                        val barW = 3.5.dp.toPx()
                         val spacing = (totalW - (count * barW)) / (count - 1).coerceAtLeast(1)
 
                         waveformAmplitudes.forEachIndexed { i, amp ->
                             val x = i * (barW + spacing)
-                            val barH = (amp * maxH).coerceAtLeast(4.dp.toPx())
+                            val barH = (amp * maxH).coerceAtLeast(3.dp.toPx())
                             val top = (maxH - barH) / 2f
                             val isPlayed = (x / totalW) <= progressFraction
 
                             drawRoundRect(
-                                color = if (isPlayed) Color(0xFF00E5C8) else Color(0xFF283548),
+                                color = if (isPlayed) SignalVermilion else AtelierChamfer,
                                 topLeft = Offset(x, top),
                                 size = Size(barW, barH),
-                                cornerRadius = CornerRadius(2.dp.toPx(), 2.dp.toPx())
+                                cornerRadius = CornerRadius(1.5.dp.toPx(), 1.5.dp.toPx())
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(3.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -457,13 +456,13 @@ fun NowPlayingScreen(
                 ) {
                     Text(
                         text = formatTimecode(trackState.currentPositionMs),
-                        style = WePlayTheme.typography.tabularMetric.copy(fontSize = 11.sp),
-                        color = Color(0xFF94A3B8)
+                        style = WePlayTheme.typography.tabularMetric.copy(fontSize = 10.sp),
+                        color = AtelierTextPrimary
                     )
                     Text(
                         text = formatTimecode(trackState.durationMs),
-                        style = WePlayTheme.typography.tabularMetric.copy(fontSize = 11.sp),
-                        color = Color(0xFF777D86)
+                        style = WePlayTheme.typography.tabularMetric.copy(fontSize = 10.sp),
+                        color = AtelierTextSecondary
                     )
                 }
             }
@@ -476,46 +475,44 @@ fun NowPlayingScreen(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Shuffle Pill
                 Box(
                     modifier = Modifier
-                        .size(42.dp)
+                        .size(40.dp)
                         .clip(CircleShape)
-                        .background(if (isShuffle) Color(0xFF1E2C3D) else Color(0xFF141922))
+                        .background(if (isShuffle) SignalVermilion else AtelierTray)
                         .clickable { isShuffle = !isShuffle },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "SHUF",
-                        style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                        color = if (isShuffle) Color(0xFF00E5C8) else Color(0xFF777D86)
+                        style = WePlayTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                        color = if (isShuffle) Color.White else AtelierTextSecondary
                     )
                 }
 
-                // Previous Track
                 Box(
                     modifier = Modifier
-                        .size(46.dp)
+                        .size(44.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF1B232E))
+                        .background(AtelierTray)
                         .clickable { onPreviousTrack() },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "◀◀",
-                        style = WePlayTheme.typography.titleMedium.copy(fontSize = 14.sp),
-                        color = Color(0xFFF1F5F9)
+                        style = WePlayTheme.typography.titleMedium.copy(fontSize = 13.sp),
+                        color = AtelierTextPrimary
                     )
                 }
 
                 // Master Play/Pause Large Center Capsule
                 Box(
                     modifier = Modifier
-                        .size(68.dp)
+                        .size(64.dp)
                         .clip(CircleShape)
                         .background(
                             Brush.verticalGradient(
-                                listOf(Color(0xFF00E5C8), Color(0xFF159E8C))
+                                listOf(SignalVermilion, Color(0xFFD63000))
                             )
                         )
                         .clickable { onPlayPauseToggle() },
@@ -523,88 +520,83 @@ fun NowPlayingScreen(
                 ) {
                     Text(
                         text = if (trackState.isPlaying) "❚❚" else "▶",
-                        style = WePlayTheme.typography.titleLarge.copy(fontSize = 24.sp),
-                        color = Color(0xFF0A0E14)
+                        style = WePlayTheme.typography.titleLarge.copy(fontSize = 22.sp),
+                        color = Color.White
                     )
                 }
 
-                // Next Track
                 Box(
                     modifier = Modifier
-                        .size(46.dp)
+                        .size(44.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF1B232E))
+                        .background(AtelierTray)
                         .clickable { onNextTrack() },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "▶▶",
-                        style = WePlayTheme.typography.titleMedium.copy(fontSize = 14.sp),
-                        color = Color(0xFFF1F5F9)
+                        style = WePlayTheme.typography.titleMedium.copy(fontSize = 13.sp),
+                        color = AtelierTextPrimary
                     )
                 }
 
-                // Repeat Pill
                 Box(
                     modifier = Modifier
-                        .size(42.dp)
+                        .size(40.dp)
                         .clip(CircleShape)
-                        .background(if (isRepeat) Color(0xFF1E2C3D) else Color(0xFF141922))
+                        .background(if (isRepeat) SignalVermilion else AtelierTray)
                         .clickable { isRepeat = !isRepeat },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "RPT",
-                        style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                        color = if (isRepeat) Color(0xFF00E5C8) else Color(0xFF777D86)
+                        style = WePlayTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                        color = if (isRepeat) Color.White else AtelierTextSecondary
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // 7. Dynamic Audio Routing Capsule (B&O / Apple AirPlay style)
+            // 7. Dynamic Audio Routing Capsule
             val selectedCount = activeDevices.count { it.isSelectedForPlayback }
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Color(0xFF141A23))
-                    .border(1.dp, Color(0xFF222C3A), RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(AtelierGunmetal)
+                    .border(1.dp, AtelierChamfer, RoundedCornerShape(8.dp))
                     .clickable { onOpenOutputSelector() }
-                    .padding(14.dp)
+                    .padding(12.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(10.dp)
+                            .size(8.dp)
                             .clip(CircleShape)
-                            .background(if (selectedCount > 0) Color(0xFF00E5C8) else Color(0xFFFF9500))
+                            .background(if (selectedCount > 0) PrecisionCyan else AtelierTextSecondary)
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = if (selectedCount == 0) "No active output route" else "$selectedCount Output Sinks In Sync",
-                            style = WePlayTheme.typography.titleMedium.copy(fontSize = 13.sp),
-                            color = Color(0xFFF1F5F9)
+                            text = if (selectedCount == 0) "No active output route" else "$selectedCount Sinks In Clock Sync",
+                            style = WePlayTheme.typography.titleMedium.copy(fontSize = 12.sp),
+                            color = AtelierTextPrimary
                         )
-                        Spacer(modifier = Modifier.height(1.dp))
                         Text(
                             text = if (selectedCount == 0) "Tap to assign Bluetooth or Wi-Fi receivers" else activeDevices.filter { it.isSelectedForPlayback }.joinToString(", ") { it.name },
-                            style = WePlayTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                            color = Color(0xFF94A3B8),
+                            style = WePlayTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                            color = AtelierTextSecondary,
                             maxLines = 1
                         )
                     }
                     Text(
-                        text = "AUDIO ROOM ›",
-                        style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                        color = Color(0xFF00E5C8)
+                        text = "ROUTING ›",
+                        style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                        color = ElectricCobalt
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(14.dp))
         }
     }
 }

@@ -28,10 +28,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.weplay.sync.shared.model.AudioOutputDevice
+import com.weplay.sync.ui.components.InstrumentChassisCard
 import com.weplay.sync.ui.components.OutputRouteCard
 import com.weplay.sync.ui.components.TactileConsoleFader
 import com.weplay.sync.ui.components.TactileVUMeter
 import com.weplay.sync.ui.components.WePlayMark
+import com.weplay.sync.ui.theme.AtelierChamfer
+import com.weplay.sync.ui.theme.AtelierGunmetal
+import com.weplay.sync.ui.theme.AtelierObsidian
+import com.weplay.sync.ui.theme.AtelierTextPrimary
+import com.weplay.sync.ui.theme.AtelierTextSecondary
+import com.weplay.sync.ui.theme.AtelierTray
+import com.weplay.sync.ui.theme.ElectricCobalt
+import com.weplay.sync.ui.theme.SignalVermilion
 import com.weplay.sync.ui.theme.WePlayTheme
 
 @Composable
@@ -52,12 +61,12 @@ fun OutputManagementScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0A0D12))
+            .background(AtelierObsidian)
             .statusBarsPadding()
             .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 12.dp)
+            .padding(horizontal = 20.dp, vertical = 10.dp)
     ) {
-        // Nav Header
+        // 1. Navigation Header
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -69,21 +78,21 @@ fun OutputManagementScreen(
                 Text(
                     text = "OUTPUT ROUTING STUDIO",
                     style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp, fontSize = 9.sp),
-                    color = Color(0xFF64748B)
+                    color = AtelierTextSecondary
                 )
             }
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
-                    .background(Color(0xFF131922))
-                    .border(1.dp, Color(0xFF263345), RoundedCornerShape(4.dp))
+                    .background(AtelierTray)
+                    .border(1.dp, AtelierChamfer, RoundedCornerShape(4.dp))
                     .clickable { onBack() }
-                    .padding(vertical = 4.dp, horizontal = 8.dp)
+                    .padding(vertical = 5.dp, horizontal = 10.dp)
             ) {
                 Text(
                     text = "CLOSE ✕",
-                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                    color = Color(0xFFCBD5E1)
+                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    color = AtelierTextPrimary
                 )
             }
         }
@@ -91,114 +100,115 @@ fun OutputManagementScreen(
         Spacer(modifier = Modifier.height(14.dp))
 
         Text(
-            text = "Audio Destinations",
-            style = WePlayTheme.typography.displayLarge.copy(fontSize = 28.sp, letterSpacing = (-0.6).sp),
-            color = Color(0xFFF8FAFC)
+            text = "Destination Routing Matrix",
+            style = WePlayTheme.typography.displayLarge.copy(fontSize = 24.sp),
+            color = AtelierTextPrimary
         )
         Spacer(modifier = Modifier.height(2.dp))
         Text(
             text = "$activeCount active endpoints receiving synchronized stream",
-            style = WePlayTheme.typography.bodyMedium.copy(fontSize = 11.sp),
-            color = Color(0xFF00E5C8)
+            style = WePlayTheme.typography.bodySmall.copy(fontSize = 11.sp),
+            color = ElectricCobalt
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
-        // Master Attenuation Studio Chassis
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(10.dp))
-                .background(Color(0xFF111722))
-                .border(1.dp, Color(0xFF1E2838), RoundedCornerShape(10.dp))
-                .padding(16.dp)
+        // 2. Master Attenuation Chassis Unit
+        InstrumentChassisCard(
+            label = "MASTER BUS GAIN & PEAK LEVEL",
+            statusIndicator = SignalVermilion
         ) {
-            Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "MASTER CONSOLE ATTENUATION",
-                            style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp, fontSize = 9.sp),
-                            color = Color(0xFF64748B)
-                        )
-                        Text(
-                            text = "Global analog-modeled output bus",
-                            style = WePlayTheme.typography.bodyMedium.copy(fontSize = 11.sp),
-                            color = Color(0xFF94A3B8)
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(if (isMasterMuted) Color(0xFFFF3B30).copy(alpha = 0.15f) else Color(0xFF192230))
-                            .border(1.dp, if (isMasterMuted) Color(0xFFFF3B30) else Color(0xFF263345), RoundedCornerShape(4.dp))
-                            .clickable { onMasterMuteToggle() }
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text(
-                            text = if (isMasterMuted) "UNMUTE ALL" else "MUTE ALL",
-                            style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                            color = if (isMasterMuted) Color(0xFFFF3B30) else Color(0xFFF1F5F9)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                TactileVUMeter(level = if (isMasterMuted) 0f else masterVolume, isPlaying = !isMasterMuted)
-
-                Spacer(modifier = Modifier.height(10.dp))
-
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 TactileConsoleFader(
-                    value = masterVolume,
+                    value = if (isMasterMuted) 0f else masterVolume,
                     onValueChange = onMasterVolumeChange,
-                    enabled = !isMasterMuted,
-                    label = "GANGED MASTER BUS LEVEL"
+                    label = "GLOBAL ANALOG ATTENUATION",
+                    modifier = Modifier.weight(1f),
+                    enabled = !isMasterMuted
+                )
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(AtelierTray)
+                        .border(1.dp, AtelierChamfer, RoundedCornerShape(4.dp))
+                        .clickable { onMasterMuteToggle() }
+                        .padding(horizontal = 8.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = if (isMasterMuted) "UNMUTE" else "MUTE ALL",
+                        style = WePlayTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                        color = if (isMasterMuted) SignalVermilion else AtelierTextSecondary
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Stereo Progressive Peak VU Meter
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "L/R",
+                    style = WePlayTheme.typography.tabularMetric.copy(fontSize = 9.sp),
+                    color = AtelierTextSecondary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                TactileVUMeter(
+                    level = if (isMasterMuted) 0f else masterVolume,
+                    isPlaying = !isMasterMuted,
+                    barCount = 18,
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
-        // Outputs List Header with Scan Button
+        // 3. Routing Rack Header with Probe Button
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "DISCOVERED DESTINATIONS",
-                style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp, fontSize = 9.sp),
-                color = Color(0xFF64748B)
+                text = "ASSIGNABLE HARDWARE SINKS",
+                style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 1.sp),
+                color = AtelierTextSecondary
             )
+
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
-                    .background(Color(0xFF003830))
-                    .border(1.dp, Color(0xFF00E5C8), RoundedCornerShape(4.dp))
+                    .background(AtelierTray)
+                    .border(1.dp, AtelierChamfer, RoundedCornerShape(4.dp))
                     .clickable { onScanDevices() }
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                    .padding(horizontal = 10.dp, vertical = 5.dp)
             ) {
                 Text(
-                    text = "+ SCAN SENSORS",
+                    text = "+ SCAN SINKS",
                     style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                    color = Color(0xFF00E5C8)
+                    color = ElectricCobalt
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // Device Route Cards
+        // 4. Output Route Cards
         LazyColumn(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(outputs) { device ->
+            items(outputs, key = { it.id }) { device ->
                 OutputRouteCard(
                     device = device,
                     onToggleSelect = onToggleDevice,

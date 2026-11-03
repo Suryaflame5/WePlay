@@ -2,40 +2,40 @@ package com.weplay.sync.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Modern Listening Atelier — Light Palette
-val CanvasLight = Color(0xFFF4F1E9)
-val SurfaceLight = Color(0xFFFFFDFC)
-val SurfaceSubtleLight = Color(0xFFECE9E2)
-val TextPrimaryLight = Color(0xFF17191E)
-val TextSecondaryLight = Color(0xFF777D86)
-val SeparatorLight = Color(0xFFE2DED5)
+// Atelier Instrumentarium & Monolithic Precision — Core Tokens
+val AtelierObsidian = Color(0xFF0B0E14)       // Deep Canvas Ground
+val AtelierGunmetal = Color(0xFF131822)       // Modular Chassis
+val AtelierTray = Color(0xFF1A212D)           // Recessed Module Trays
+val AtelierChamfer = Color(0xFF243042)        // Chamfer Edge / Milling Border
+val AtelierTextPrimary = Color(0xFFF2F5F8)    // Milled Aluminum Lettering
+val AtelierTextSecondary = Color(0xFF7E8A98)  // Laser-etched Annotations
 
-// Modern Listening Atelier — Dark Palette
-val CanvasDark = Color(0xFF11151B)
-val SurfaceDark = Color(0xFF1B222B)
-val SurfaceSubtleDark = Color(0xFF242C37)
-val TextPrimaryDark = Color(0xFFF4F2EB)
-val TextSecondaryDark = Color(0xFFA8AFB8)
-val SeparatorDark = Color(0xFF28313D)
+// High-Visibility Functional Signal Enamel
+val SignalVermilion = Color(0xFFFF3B00)       // Active Transmission / Live Conduit
+val SignalVermilionSubtle = Color(0x24FF3B00)
+val ElectricCobalt = Color(0xFF1A62FF)        // PTP Clock Sync / Phase Lock
+val ElectricCobaltSubtle = Color(0x241A62FF)
+val CalibratedGold = Color(0xFFE5A93C)        // 24-bit / 96kHz Studio Badge
+val CalibratedGoldSubtle = Color(0x24E5A93C)
+val PrecisionCyan = Color(0xFF00E5C8)         // Optical Telemetry / Active Indicator
+val PrecisionCyanSubtle = Color(0x2400E5C8)
+val HardwareBarred = Color(0xFFFF2A40)        // DRM / Widevine Boundary Barred
 
-// Expressive Atelier Accents
-val AccentTeal = Color(0xFF24B9A6)
-val AccentTealSubtle = Color(0x1F24B9A6)
-val AccentCoral = Color(0xFFF27B58)
-val AccentCoralSubtle = Color(0x1FF27B58)
-val AccentBlue = Color(0xFF5878D9)
-val AccentBlueSubtle = Color(0x1F5878D9)
-val AccentLavender = Color(0xFF9A86C8)
-val AccentLavenderSubtle = Color(0x1F9A86C8)
-val AccentGold = Color(0xFFD0A34A)
-val AccentGoldSubtle = Color(0x1FD0A34A)
+// Light Palette (Technical Studio Drafting Mode)
+val CanvasLight = Color(0xFFF0EDE5)
+val SurfaceLight = Color(0xFFFAF8F5)
+val SurfaceSubtleLight = Color(0xFFE5E1D8)
+val TextPrimaryLight = Color(0xFF0D1117)
+val TextSecondaryLight = Color(0xFF6B7280)
+val SeparatorLight = Color(0xFFD1CBC0)
 
-// Functional State Colors
-val StateWarning = Color(0xFFE67E22)
-val StateWarningSubtle = Color(0x1FE67E22)
-val StateError = Color(0xFFD9534F)
-val StateErrorSubtle = Color(0x1FD9534F)
-val StateSuccess = Color(0xFF2ECC71)
+// Dark Palette (Atelier Instrumentarium Standard Mode)
+val CanvasDark = AtelierObsidian
+val SurfaceDark = AtelierGunmetal
+val SurfaceSubtleDark = AtelierTray
+val TextPrimaryDark = AtelierTextPrimary
+val TextSecondaryDark = AtelierTextSecondary
+val SeparatorDark = AtelierChamfer
 
 data class WePlayColorPalette(
     val canvas: Color,
@@ -46,6 +46,10 @@ data class WePlayColorPalette(
     val separator: Color,
     val accent: Color,
     val accentSubtle: Color,
+    val signalVermilion: Color,
+    val electricCobalt: Color,
+    val calibratedGold: Color,
+    val precisionCyan: Color,
     val coral: Color,
     val blue: Color,
     val lavender: Color,
@@ -63,15 +67,19 @@ val LightPalette = WePlayColorPalette(
     textPrimary = TextPrimaryLight,
     textSecondary = TextSecondaryLight,
     separator = SeparatorLight,
-    accent = AccentTeal,
-    accentSubtle = AccentTealSubtle,
-    coral = AccentCoral,
-    blue = AccentBlue,
-    lavender = AccentLavender,
-    gold = AccentGold,
-    warning = StateWarning,
-    error = StateError,
-    success = StateSuccess,
+    accent = SignalVermilion,
+    accentSubtle = SignalVermilionSubtle,
+    signalVermilion = SignalVermilion,
+    electricCobalt = ElectricCobalt,
+    calibratedGold = CalibratedGold,
+    precisionCyan = PrecisionCyan,
+    coral = SignalVermilion,
+    blue = ElectricCobalt,
+    lavender = Color(0xFF8B7CF6),
+    gold = CalibratedGold,
+    warning = Color(0xFFF59E0B),
+    error = HardwareBarred,
+    success = PrecisionCyan,
     isDark = false
 )
 
@@ -82,14 +90,18 @@ val DarkPalette = WePlayColorPalette(
     textPrimary = TextPrimaryDark,
     textSecondary = TextSecondaryDark,
     separator = SeparatorDark,
-    accent = AccentTeal,
-    accentSubtle = AccentTealSubtle,
-    coral = AccentCoral,
-    blue = AccentBlue,
-    lavender = AccentLavender,
-    gold = AccentGold,
-    warning = StateWarning,
-    error = StateError,
-    success = StateSuccess,
+    accent = SignalVermilion,
+    accentSubtle = SignalVermilionSubtle,
+    signalVermilion = SignalVermilion,
+    electricCobalt = ElectricCobalt,
+    calibratedGold = CalibratedGold,
+    precisionCyan = PrecisionCyan,
+    coral = SignalVermilion,
+    blue = ElectricCobalt,
+    lavender = Color(0xFF8B7CF6),
+    gold = CalibratedGold,
+    warning = Color(0xFFF59E0B),
+    error = HardwareBarred,
+    success = PrecisionCyan,
     isDark = true
 )

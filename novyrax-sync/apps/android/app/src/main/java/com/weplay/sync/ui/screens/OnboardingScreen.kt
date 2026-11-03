@@ -37,6 +37,15 @@ import com.weplay.sync.shared.model.AudioQualitySetting
 import com.weplay.sync.shared.model.SyncModeSetting
 import com.weplay.sync.ui.components.EchoOrbitSoundstage
 import com.weplay.sync.ui.components.WePlayMark
+import com.weplay.sync.ui.theme.AtelierChamfer
+import com.weplay.sync.ui.theme.AtelierGunmetal
+import com.weplay.sync.ui.theme.AtelierObsidian
+import com.weplay.sync.ui.theme.AtelierTextPrimary
+import com.weplay.sync.ui.theme.AtelierTextSecondary
+import com.weplay.sync.ui.theme.AtelierTray
+import com.weplay.sync.ui.theme.ElectricCobalt
+import com.weplay.sync.ui.theme.PrecisionCyan
+import com.weplay.sync.ui.theme.SignalVermilion
 import com.weplay.sync.ui.theme.WePlayTheme
 
 @Composable
@@ -49,11 +58,11 @@ fun OnboardingScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(WePlayTheme.colors.canvas)
+            .background(AtelierObsidian)
             .statusBarsPadding()
             .navigationBarsPadding()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 16.dp)
+            .padding(horizontal = 20.dp, vertical = 14.dp)
     ) {
         // 1. Atelier Identity Header
         Row(
@@ -68,74 +77,73 @@ fun OnboardingScreen(
                     Text(
                         text = "WEPLAY",
                         style = WePlayTheme.typography.displayMedium.copy(fontSize = 17.sp, letterSpacing = 1.2.sp),
-                        color = WePlayTheme.colors.textPrimary
+                        color = AtelierTextPrimary
                     )
                     Text(
-                        text = "UNIVERSAL AUDIO DISTRIBUTION",
-                        style = WePlayTheme.typography.labelSmall.copy(fontSize = 8.sp, color = WePlayTheme.colors.textSecondary)
+                        text = "ATELIER INSTRUMENTARIUM",
+                        style = WePlayTheme.typography.labelSmall.copy(fontSize = 8.sp, color = AtelierTextSecondary)
                     )
                 }
             }
 
-            // Architecture pill
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(3.dp))
-                    .background(Color(0xFF1B222B))
-                    .border(1.dp, Color(0xFF28313D), RoundedCornerShape(3.dp))
+                    .background(AtelierTray)
+                    .border(1.dp, AtelierChamfer, RoundedCornerShape(3.dp))
                     .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
                 Text(
-                    text = "SYS HAL 1.0",
+                    text = "SPEC 1.0",
                     style = WePlayTheme.typography.tabularMetric.copy(fontSize = 9.sp),
-                    color = Color(0xFF00E5C8)
+                    color = PrecisionCyan
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(18.dp))
 
-        // 2. Cinematic Concentric Orbit Hero (EchoTalk & PolySpeaker inspired)
+        // 2. Concentric Orbit Hero
         EchoOrbitSoundstage(
             broadcasterName = "WePlay Master Transmitter",
             listenerNodes = listOf("Robin's LE Buds", "Studio Hi-Fi", "WH-1000XM5", "Living Room")
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         // 3. Editorial Value Proposition
         Text(
             text = "One phone.\nEvery listener.",
-            style = WePlayTheme.typography.displayLarge.copy(fontSize = 30.sp, lineHeight = 36.sp),
-            color = WePlayTheme.colors.textPrimary
+            style = WePlayTheme.typography.displayLarge.copy(fontSize = 28.sp, lineHeight = 34.sp),
+            color = AtelierTextPrimary
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
         Text(
             text = "Broadcast your phone's audio — Spotify, YouTube, games, or lossless local FLAC — simultaneously to multiple Bluetooth headphones and Wi-Fi receivers in sub-millisecond sync.",
-            style = WePlayTheme.typography.bodyMedium.copy(fontSize = 13.sp, lineHeight = 19.sp),
-            color = WePlayTheme.colors.textSecondary
+            style = WePlayTheme.typography.bodySmall.copy(fontSize = 12.sp, lineHeight = 18.sp),
+            color = AtelierTextSecondary
         )
 
-        Spacer(modifier = Modifier.height(22.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
-        // 4. PolySpeaker-Inspired 4-Step Architecture Flow
+        // 4. 4-Step Modular Architecture
         Text(
-            text = "HOW IT WORKS",
+            text = "HOW IT OPERATES",
             style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 1.2.sp),
-            color = WePlayTheme.colors.accent
+            color = SignalVermilion
         )
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         WorkflowStepCard(
             step = "01",
             title = "Start Audio Broadcast",
-            description = "Capture authorized device audio or launch high-res atelier music."
+            description = "Capture authorized device audio or launch studio lossless master."
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
         WorkflowStepCard(
             step = "02",
@@ -143,7 +151,7 @@ fun OnboardingScreen(
             description = "Nearby listener phones scan the QR code to join without pairing hassle."
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
         WorkflowStepCard(
             step = "03",
@@ -151,7 +159,7 @@ fun OnboardingScreen(
             description = "Audio packets distribute over low-latency UDP Wi-Fi and Bluetooth LE."
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
         WorkflowStepCard(
             step = "04",
@@ -159,16 +167,16 @@ fun OnboardingScreen(
             description = "Each listener controls personal attenuation with sample-accurate clock sync."
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
-        // 5. Contextual Permission Switches
+        // 5. Hardware Permissions
         Text(
             text = "HARDWARE PERMISSIONS",
             style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 1.2.sp),
-            color = WePlayTheme.colors.textSecondary
+            color = AtelierTextSecondary
         )
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         PermissionRow(
             title = "Nearby Bluetooth & LE Audio",
@@ -177,7 +185,7 @@ fun OnboardingScreen(
             onToggle = { bluetoothGranted = !bluetoothGranted }
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
         PermissionRow(
             title = "Local High-Res Audio Storage",
@@ -186,17 +194,17 @@ fun OnboardingScreen(
             onToggle = { audioGranted = !audioGranted }
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(22.dp))
 
-        // 6. Action Button: Machined capsule
+        // 6. Action Button: Machined Signal Vermilion capsule
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(6.dp))
                 .background(
                     Brush.horizontalGradient(
-                        listOf(Color(0xFF24B9A6), Color(0xFF1E88E5))
+                        listOf(SignalVermilion, Color(0xFFD63000))
                     )
                 )
                 .clickable {
@@ -208,17 +216,17 @@ fun OnboardingScreen(
                 Text(
                     text = "ENTER WEPLAY ATELIER",
                     style = WePlayTheme.typography.titleMedium.copy(
-                        fontSize = 13.sp,
-                        letterSpacing = 1.2.sp,
-                        color = Color(0xFF0F141C)
+                        fontSize = 12.sp,
+                        letterSpacing = 1.4.sp,
+                        color = Color.White
                     )
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "→",
                     style = WePlayTheme.typography.titleMedium.copy(
-                        fontSize = 15.sp,
-                        color = Color(0xFF0F141C)
+                        fontSize = 14.sp,
+                        color = Color.White
                     )
                 )
             }
@@ -238,8 +246,8 @@ private fun WorkflowStepCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(6.dp))
-            .background(Color(0xFF151B22))
-            .border(1.dp, Color(0xFF242E3B), RoundedCornerShape(6.dp))
+            .background(AtelierGunmetal)
+            .border(1.dp, AtelierChamfer, RoundedCornerShape(6.dp))
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -247,14 +255,14 @@ private fun WorkflowStepCard(
             modifier = Modifier
                 .size(32.dp)
                 .clip(CircleShape)
-                .background(Color(0xFF0D1117))
-                .border(1.dp, Color(0xFF00E5C8), CircleShape),
+                .background(AtelierTray)
+                .border(1.dp, SignalVermilion, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = step,
                 style = WePlayTheme.typography.tabularMetric.copy(fontSize = 11.sp),
-                color = Color(0xFF00E5C8)
+                color = SignalVermilion
             )
         }
 
@@ -264,13 +272,13 @@ private fun WorkflowStepCard(
             Text(
                 text = title,
                 style = WePlayTheme.typography.titleMedium.copy(fontSize = 13.sp),
-                color = WePlayTheme.colors.textPrimary
+                color = AtelierTextPrimary
             )
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(1.dp))
             Text(
                 text = description,
-                style = WePlayTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                color = WePlayTheme.colors.textSecondary
+                style = WePlayTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                color = AtelierTextSecondary
             )
         }
     }
@@ -287,8 +295,8 @@ private fun PermissionRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(6.dp))
-            .background(Color(0xFF151B22))
-            .border(1.dp, Color(0xFF242E3B), RoundedCornerShape(6.dp))
+            .background(AtelierGunmetal)
+            .border(1.dp, AtelierChamfer, RoundedCornerShape(6.dp))
             .clickable { onToggle() }
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -297,26 +305,26 @@ private fun PermissionRow(
             Text(
                 text = title,
                 style = WePlayTheme.typography.titleMedium.copy(fontSize = 13.sp),
-                color = WePlayTheme.colors.textPrimary
+                color = AtelierTextPrimary
             )
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(1.dp))
             Text(
                 text = subtitle,
                 style = WePlayTheme.typography.bodySmall.copy(fontSize = 10.sp),
-                color = WePlayTheme.colors.textSecondary
+                color = AtelierTextSecondary
             )
         }
         Spacer(modifier = Modifier.width(10.dp))
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(4.dp))
-                .background(if (isGranted) Color(0xFF00E5C8) else Color(0xFF263238))
+                .background(if (isGranted) PrecisionCyan else AtelierTray)
                 .padding(horizontal = 10.dp, vertical = 6.dp)
         ) {
             Text(
                 text = if (isGranted) "READY" else "ENABLE",
                 style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                color = if (isGranted) Color(0xFF0C1017) else Color(0xFFCBD5E1)
+                color = if (isGranted) Color(0xFF0C1017) else AtelierTextSecondary
             )
         }
     }

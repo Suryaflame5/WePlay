@@ -32,10 +32,20 @@ import androidx.compose.ui.unit.sp
 import com.weplay.sync.shared.model.AudioSharingSession
 import com.weplay.sync.shared.model.CaptureStatus
 import com.weplay.sync.shared.model.DeviceType
+import com.weplay.sync.ui.components.AcousticBusRail
 import com.weplay.sync.ui.components.HardwareVectorGlyph
-import com.weplay.sync.ui.components.SpatialAcousticSoundstage
-import com.weplay.sync.ui.components.TactileVUMeter
+import com.weplay.sync.ui.components.InstrumentChassisCard
 import com.weplay.sync.ui.components.WePlayMark
+import com.weplay.sync.ui.theme.AtelierChamfer
+import com.weplay.sync.ui.theme.AtelierGunmetal
+import com.weplay.sync.ui.theme.AtelierObsidian
+import com.weplay.sync.ui.theme.AtelierTextPrimary
+import com.weplay.sync.ui.theme.AtelierTextSecondary
+import com.weplay.sync.ui.theme.AtelierTray
+import com.weplay.sync.ui.theme.CalibratedGold
+import com.weplay.sync.ui.theme.ElectricCobalt
+import com.weplay.sync.ui.theme.PrecisionCyan
+import com.weplay.sync.ui.theme.SignalVermilion
 import com.weplay.sync.ui.theme.WePlayTheme
 
 @Composable
@@ -53,7 +63,7 @@ fun ShareHomeScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0A0D12)) // Deep Architectural Studio Charcoal
+            .background(AtelierObsidian)
     ) {
         Column(
             modifier = Modifier
@@ -62,7 +72,7 @@ fun ShareHomeScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = if (isSessionLive) 100.dp else 28.dp)
         ) {
-            // 1. Studio Header & Chassis Bar
+            // 1. Atelier Top Header & Machine Bar
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -77,421 +87,351 @@ fun ShareHomeScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = "WEPLAY",
-                                style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 2.sp, fontSize = 11.sp),
-                                color = Color(0xFFF1F5F9)
+                                style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.8.sp, fontSize = 11.sp),
+                                color = AtelierTextPrimary
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(2.dp))
-                                    .background(Color(0xFF1E293B))
-                                    .padding(horizontal = 4.dp, vertical = 1.dp)
+                                    .background(AtelierTray)
+                                    .padding(horizontal = 5.dp, vertical = 1.dp)
                             ) {
                                 Text(
-                                    text = "v2.4",
+                                    text = "HAL 1.0",
                                     style = WePlayTheme.typography.tabularMetric.copy(fontSize = 8.sp),
-                                    color = Color(0xFF94A3B8)
+                                    color = PrecisionCyan
                                 )
                             }
                         }
                         Text(
-                            text = "MULTI-DEVICE AUDIO DISTRIBUTION",
-                            style = WePlayTheme.typography.labelSmall.copy(fontSize = 8.sp, letterSpacing = 1.sp, color = Color(0xFF64748B))
+                            text = "ATELIER INSTRUMENTARIUM",
+                            style = WePlayTheme.typography.labelSmall.copy(fontSize = 8.sp, letterSpacing = 1.sp),
+                            color = AtelierTextSecondary
                         )
                     }
                 }
 
+                // Quick Navigation Controls
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Engine State Chip
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(4.dp))
-                            .background(if (isSessionLive) Color(0xFF003830) else Color(0xFF131922))
-                            .border(1.dp, if (isSessionLive) Color(0xFF00E5C8) else Color(0xFF263345), RoundedCornerShape(4.dp))
+                            .background(AtelierTray)
+                            .border(1.dp, AtelierChamfer, RoundedCornerShape(4.dp))
                             .clickable { onOpenDevices() }
-                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                            .padding(horizontal = 8.dp, vertical = 5.dp)
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(6.dp)
-                                    .clip(CircleShape)
-                                    .background(if (isSessionLive) Color(0xFF00E5C8) else Color(0xFF38BDF8))
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = if (isSessionLive) "ON AIR (${activeSession.listeners.size})" else "ENGINE READY",
-                                style = WePlayTheme.typography.tabularMetric.copy(fontSize = 9.sp),
-                                color = if (isSessionLive) Color(0xFF00E5C8) else Color(0xFFCBD5E1)
-                            )
-                        }
+                        Text(
+                            text = "ROUTES",
+                            style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                            color = AtelierTextPrimary
+                        )
                     }
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    // Tactical Settings Button
                     Box(
                         modifier = Modifier
-                            .size(34.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(Color(0xFF131922))
-                            .border(1.dp, Color(0xFF263345), RoundedCornerShape(6.dp))
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(AtelierTray)
+                            .border(1.dp, AtelierChamfer, CircleShape)
                             .clickable { onOpenSettings() },
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(text = "⚙", fontSize = 14.sp, color = Color(0xFFCBD5E1))
+                        Text(
+                            text = "⚙",
+                            style = WePlayTheme.typography.bodyMedium,
+                            color = AtelierTextPrimary
+                        )
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // 2. Editorial Lead Section
-            Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-                Text(
-                    text = "Acoustic Stage",
-                    style = WePlayTheme.typography.displayLarge.copy(fontSize = 32.sp, letterSpacing = (-0.8).sp),
-                    color = Color(0xFFF8FAFC)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Broadcast your phone's real-time audio across unlimited Bluetooth headphones and synchronized Wi-Fi receivers.",
-                    style = WePlayTheme.typography.bodyMedium.copy(fontSize = 13.sp, lineHeight = 18.sp),
-                    color = Color(0xFF94A3B8)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            // 3. Central Interactive Spatial Soundstage
+            // 2. Active Acoustic Bus Rail (Reflects live application transmission state)
             Box(modifier = Modifier.padding(horizontal = 20.dp)) {
-                SpatialAcousticSoundstage(
-                    hostName = "My Host Audio Stream",
-                    listeners = activeSession.listeners,
-                    isLive = isSessionLive
+                AcousticBusRail(
+                    isTransmitting = isSessionLive,
+                    listenerCount = activeSession.listeners.size,
+                    transportFormat = if (isSessionLive) "WADP UDP LPCM 48k/16b • 1500 MTU" else "PIPELINE STANDBY // READY TO ROUTE"
                 )
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // 4. Primary Studio Switchgear (Broadcast & Receive)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                // START BROADCAST BUTTON (Machined Aluminum / Teal Tone)
-                Box(
-                    modifier = Modifier
-                        .weight(1.3f)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(Color(0xFF00E5C8), Color(0xFF00A896))
+            // 3. Monolithic Broadcast Transmitter Chassis
+            Box(modifier = Modifier.padding(horizontal = 20.dp)) {
+                InstrumentChassisCard(
+                    label = "AUDIO BROADCAST TRANSMITTER",
+                    statusIndicator = if (isSessionLive) SignalVermilion else AtelierTextSecondary
+                ) {
+                    Text(
+                        text = "Distribute phone audio to multiple headphones and Wi-Fi receivers simultaneously.",
+                        style = WePlayTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 16.sp),
+                        color = AtelierTextSecondary
+                    )
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Machined vermilion trigger capsule
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(SignalVermilion, Color(0xFFD63000))
+                                )
                             )
-                        )
-                        .clickable { onStartSession() }
-                        .padding(vertical = 15.dp, horizontal = 16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "🎙", fontSize = 16.sp)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = if (isSessionLive) "VIEW LIVE BROADCAST" else "START AUDIO BROADCAST",
-                            style = WePlayTheme.typography.labelSmall.copy(fontSize = 11.sp, letterSpacing = 1.1.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
-                            color = Color(0xFF0A0D12)
-                        )
+                            .clickable {
+                                if (isSessionLive) onOpenLiveSession() else onStartSession()
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = if (isSessionLive) "OPEN LIVE TRANSMITTER CONSOLE ›" else "START AUDIO BROADCAST",
+                                style = WePlayTheme.typography.titleMedium.copy(
+                                    fontSize = 13.sp,
+                                    letterSpacing = 1.2.sp,
+                                    color = Color.White
+                                )
+                            )
+                        }
                     }
-                }
 
-                // JOIN STREAM BUTTON
-                Box(
-                    modifier = Modifier
-                        .weight(0.9f)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFF131922))
-                        .border(1.dp, Color(0xFF263345), RoundedCornerShape(8.dp))
-                        .clickable { onJoinSession() }
-                        .padding(vertical = 15.dp, horizontal = 12.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "📡", fontSize = 15.sp)
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "JOIN STREAM",
-                            style = WePlayTheme.typography.labelSmall.copy(fontSize = 11.sp, letterSpacing = 0.8.sp),
-                            color = Color(0xFFF1F5F9)
-                        )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Mode Selection Specification
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(AtelierTray)
+                                .border(1.dp, AtelierChamfer, RoundedCornerShape(4.dp))
+                                .padding(8.dp)
+                        ) {
+                            Column {
+                                Text(
+                                    text = "CROSS-APP CAPTURE",
+                                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                                    color = PrecisionCyan
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Android AudioPlaybackCapture via MediaProjection token",
+                                    style = WePlayTheme.typography.bodySmall.copy(fontSize = 9.sp),
+                                    color = AtelierTextSecondary
+                                )
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(AtelierTray)
+                                .border(1.dp, AtelierChamfer, RoundedCornerShape(4.dp))
+                                .padding(8.dp)
+                        ) {
+                            Column {
+                                Text(
+                                    text = "STUDIO MASTER",
+                                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                                    color = CalibratedGold
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Direct bit-perfect 24-bit/96kHz local FLAC decoding",
+                                    style = WePlayTheme.typography.bodySmall.copy(fontSize = 9.sp),
+                                    color = AtelierTextSecondary
+                                )
+                            }
+                        }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // 5. Active Transmission Matrix Rack
-            Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+            // 4. Companion Receiver Chassis
+            Box(modifier = Modifier.padding(horizontal = 20.dp)) {
+                InstrumentChassisCard(
+                    label = "RECEIVER COMPANION SINK",
+                    statusIndicator = ElectricCobalt
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Join an Audio Broadcast",
+                                style = WePlayTheme.typography.titleMedium.copy(fontSize = 13.sp),
+                                color = AtelierTextPrimary
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Scan QR matrix or enter 6-character broadcast PIN to stream in sync.",
+                                style = WePlayTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                                color = AtelierTextSecondary
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(ElectricCobalt)
+                                .clickable { onJoinSession() }
+                                .padding(horizontal = 14.dp, vertical = 9.dp)
+                        ) {
+                            Text(
+                                text = "JOIN STREAM",
+                                style = WePlayTheme.typography.labelSmall.copy(
+                                    fontSize = 9.sp,
+                                    letterSpacing = 0.8.sp,
+                                    color = Color.White
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 5. Physical Transmission Matrix Telemetry
+            Box(modifier = Modifier.padding(horizontal = 20.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        text = "TRANSMISSION CHANNELS",
-                        style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp, fontSize = 9.sp),
-                        color = Color(0xFF64748B)
+                    TelemetryBlock(
+                        title = "SYNC ENGINE",
+                        value = "< 30ms",
+                        caption = "Buffered Alignment",
+                        accentColor = PrecisionCyan,
+                        modifier = Modifier.weight(1f)
                     )
-                    Text(
-                        text = "WADP v1.0 • 48kHz LPCM",
-                        style = WePlayTheme.typography.tabularMetric.copy(fontSize = 9.sp),
-                        color = Color(0xFF00E5C8)
+                    TelemetryBlock(
+                        title = "WIRE PROTOCOL",
+                        value = "WADP v1.0",
+                        caption = "Low-Latency UDP",
+                        accentColor = ElectricCobalt,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TelemetryBlock(
+                        title = "AURACAST",
+                        value = "READY",
+                        caption = "Hardware Probed",
+                        accentColor = CalibratedGold,
+                        modifier = Modifier.weight(1f)
                     )
                 }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Transport 1: Playback Capture
-                ChassisChannelCard(
-                    title = "Android System Audio Capture",
-                    badge = "Cross-App HAL",
-                    description = "Intercepts eligible media from YouTube, Spotify, VLC, podcast players & games.",
-                    type = DeviceType.SYSTEM_BUILTIN,
-                    statusText = "SUPPORTED",
-                    statusColor = Color(0xFF00E5C8),
-                    level = if (isSessionLive) 0.72f else 0f,
-                    isPlaying = isSessionLive
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Transport 2: Lossless Wi-Fi Network
-                ChassisChannelCard(
-                    title = "WePlay UDP Multi-Receiver Engine",
-                    badge = "Lossless 1,536 kbps",
-                    description = "Distributes raw 16-bit 48kHz LPCM slices directly over local Wi-Fi with sequence ordering.",
-                    type = DeviceType.NETWORK_RECEIVER,
-                    statusText = "READY",
-                    statusColor = Color(0xFF00E5C8),
-                    level = if (isSessionLive) 0.65f else 0f,
-                    isPlaying = isSessionLive
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Transport 3: Auracast Broadcast
-                ChassisChannelCard(
-                    title = "Bluetooth Auracast Assistant",
-                    badge = "LE Audio LC3",
-                    description = "Assists system-level hardware broadcasting to compatible hearing aids and earbuds.",
-                    type = DeviceType.HI_FI_SYSTEM,
-                    statusText = "PROBE CAPABLE",
-                    statusColor = Color(0xFFFF9500),
-                    level = 0f,
-                    isPlaying = false
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // 6. Recent Soundstages & Rooms
-            Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-                Text(
-                    text = "RECENT AUDIO SESSIONS",
-                    style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp, fontSize = 9.sp),
-                    color = Color(0xFF64748B)
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-
-                StudioSessionRow(
-                    name = "Late Night Movie Sync",
-                    meta = "3 listeners • YouTube / Netflix • 24ms avg drift",
-                    code = "WP-9104",
-                    onSelect = onStartSession
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                StudioSessionRow(
-                    name = "Gym Twin-Earbud Pair",
-                    meta = "2 listeners • Spotify • Lossless LPCM",
-                    code = "WP-3240",
-                    onSelect = onStartSession
-                )
             }
         }
 
-        // 7. Persistent Broadcast Monitor Capsule
+        // 6. Persistent Floating Broadcast Status Capsule
         if (isSessionLive) {
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
                     .navigationBarsPadding()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-                    .clip(RoundedCornerShape(32.dp))
-                    .background(Color(0xFF111722))
-                    .border(1.dp, Color(0xFF00E5C8), RoundedCornerShape(32.dp))
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(AtelierGunmetal)
+                    .border(1.dp, SignalVermilion, RoundedCornerShape(8.dp))
                     .clickable { onOpenLiveSession() }
-                    .padding(horizontal = 18.dp, vertical = 12.dp)
+                    .padding(14.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(10.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFF00E5C8))
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "LIVE SHARING SESSION • ON AIR",
-                            style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp, color = Color(0xFF00E5C8))
-                        )
-                        Text(
-                            text = "${activeSession.listeners.size} connected & receiving • ${activeSession.sessionCode}",
-                            style = WePlayTheme.typography.bodyMedium.copy(fontSize = 12.sp, color = Color(0xFFF1F5F9))
-                        )
-                    }
-                    Text(
-                        text = "STUDIO RACK ›",
-                        style = WePlayTheme.typography.labelSmall.copy(color = Color(0xFF00E5C8), fontSize = 10.sp)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ChassisChannelCard(
-    title: String,
-    badge: String,
-    description: String,
-    type: DeviceType,
-    statusText: String,
-    statusColor: Color,
-    level: Float,
-    isPlaying: Boolean
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFF111722))
-            .border(1.dp, Color(0xFF1E2838), RoundedCornerShape(8.dp))
-            .padding(14.dp)
-    ) {
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Color(0xFF192230)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    HardwareVectorGlyph(type = type, tint = statusColor)
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = title,
-                            style = WePlayTheme.typography.titleMedium.copy(fontSize = 13.sp),
-                            color = Color(0xFFF1F5F9)
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(statusColor.copy(alpha = 0.15f))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(SignalVermilion)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column {
                             Text(
-                                text = statusText,
-                                style = WePlayTheme.typography.tabularMetric.copy(fontSize = 8.sp),
-                                color = statusColor
+                                text = "BROADCAST ACTIVE // ${activeSession.sessionCode}",
+                                style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 1.sp),
+                                color = SignalVermilion
+                            )
+                            Text(
+                                text = "${activeSession.listeners.size} listeners bound to clock",
+                                style = WePlayTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                                color = AtelierTextSecondary
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.height(2.dp))
+
                     Text(
-                        text = badge,
-                        style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp, color = Color(0xFF64748B))
+                        text = "CONSOLE ›",
+                        style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                        color = AtelierTextPrimary
                     )
                 }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = description,
-                style = WePlayTheme.typography.bodyMedium.copy(fontSize = 11.sp, lineHeight = 16.sp),
-                color = Color(0xFF94A3B8)
-            )
-
-            if (isPlaying) {
-                Spacer(modifier = Modifier.height(10.dp))
-                TactileVUMeter(level = level, isPlaying = true)
             }
         }
     }
 }
 
 @Composable
-fun StudioSessionRow(
-    name: String,
-    meta: String,
-    code: String,
-    onSelect: () -> Unit
+private fun TelemetryBlock(
+    title: String,
+    value: String,
+    caption: String,
+    accentColor: Color,
+    modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(6.dp))
-            .background(Color(0xFF111722))
-            .border(1.dp, Color(0xFF1E2838), RoundedCornerShape(6.dp))
-            .clickable { onSelect() }
-            .padding(horizontal = 14.dp, vertical = 12.dp)
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(4.dp))
+            .background(AtelierTray)
+            .border(1.dp, AtelierChamfer, RoundedCornerShape(4.dp))
+            .padding(10.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(
-                    text = name,
-                    style = WePlayTheme.typography.titleMedium.copy(fontSize = 13.sp),
-                    color = Color(0xFFF1F5F9)
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = meta,
-                    style = WePlayTheme.typography.bodyMedium.copy(fontSize = 10.sp),
-                    color = Color(0xFF64748B)
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(Color(0xFF192230))
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = code,
-                    style = WePlayTheme.typography.tabularMetric.copy(fontSize = 10.sp),
-                    color = Color(0xFF00E5C8)
-                )
-            }
-        }
+        Text(
+            text = title,
+            style = WePlayTheme.typography.labelSmall.copy(fontSize = 8.sp, letterSpacing = 1.sp),
+            color = AtelierTextSecondary
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = value,
+            style = WePlayTheme.typography.tabularMetric.copy(fontSize = 13.sp),
+            color = accentColor
+        )
+        Spacer(modifier = Modifier.height(1.dp))
+        Text(
+            text = caption,
+            style = WePlayTheme.typography.bodySmall.copy(fontSize = 8.sp),
+            color = AtelierTextSecondary
+        )
     }
 }
