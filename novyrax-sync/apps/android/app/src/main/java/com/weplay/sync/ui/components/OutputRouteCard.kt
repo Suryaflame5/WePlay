@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.weplay.sync.shared.model.AudioOutputDevice
 import com.weplay.sync.shared.model.ConnectionStatus
-import com.weplay.sync.shared.model.DeviceType
 import com.weplay.sync.shared.model.TransportType
 import com.weplay.sync.ui.theme.WePlayTheme
 
@@ -41,18 +40,18 @@ fun OutputRouteCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(4.dp))
-            .background(WePlayTheme.colors.surface)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color(0xFF111722))
             .border(
                 width = 1.dp,
                 color = when {
-                    device.status == ConnectionStatus.PLAYING && isSelected -> WePlayTheme.colors.accent
-                    device.status == ConnectionStatus.SYNC_WARNING -> WePlayTheme.colors.warning
-                    device.status == ConnectionStatus.UNSUPPORTED -> WePlayTheme.colors.separator.copy(alpha = 0.5f)
-                    isSelected -> WePlayTheme.colors.textPrimary
-                    else -> WePlayTheme.colors.separator
+                    device.status == ConnectionStatus.PLAYING && isSelected -> Color(0xFF00E5C8)
+                    device.status == ConnectionStatus.SYNC_WARNING -> Color(0xFFFF9500)
+                    device.status == ConnectionStatus.UNSUPPORTED -> Color(0xFF1E2838)
+                    isSelected -> Color(0xFF38BDF8)
+                    else -> Color(0xFF1E2838)
                 },
-                shape = RoundedCornerShape(4.dp)
+                shape = RoundedCornerShape(8.dp)
             )
             .padding(14.dp)
     ) {
@@ -63,22 +62,14 @@ fun OutputRouteCard(
             // Equipment Glyph Badge
             Box(
                 modifier = Modifier
-                    .size(36.dp)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(WePlayTheme.colors.surfaceSubtle),
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(Color(0xFF192230)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = when (device.type) {
-                        DeviceType.HEADPHONES -> "🎧"
-                        DeviceType.SPEAKER -> "🔊"
-                        DeviceType.HI_FI_SYSTEM -> "📻"
-                        DeviceType.NETWORK_RECEIVER -> "📡"
-                        DeviceType.CAR_AUDIO -> "🚗"
-                        DeviceType.SMART_TV -> "📺"
-                        DeviceType.SYSTEM_BUILTIN -> "📱"
-                    },
-                    style = WePlayTheme.typography.bodyMedium.copy(fontSize = 15.sp)
+                HardwareVectorGlyph(
+                    type = device.type,
+                    tint = if (isSelected) Color(0xFF00E5C8) else Color(0xFF94A3B8)
                 )
             }
 
@@ -88,8 +79,8 @@ fun OutputRouteCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = device.name,
-                    style = WePlayTheme.typography.titleMedium,
-                    color = if (isInteractive) WePlayTheme.colors.textPrimary else WePlayTheme.colors.textSecondary
+                    style = WePlayTheme.typography.titleMedium.copy(fontSize = 14.sp),
+                    color = if (isInteractive) Color(0xFFF1F5F9) else Color(0xFF64748B)
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
@@ -101,32 +92,32 @@ fun OutputRouteCard(
                         TransportType.WIRED_EXTERNAL -> "USB-C Audio / External DAC"
                         TransportType.BUILTIN_SPEAKER -> "Internal Device Speaker"
                     },
-                    style = WePlayTheme.typography.bodyMedium.copy(fontSize = 11.sp),
-                    color = WePlayTheme.colors.textSecondary
+                    style = WePlayTheme.typography.bodyMedium.copy(fontSize = 10.sp),
+                    color = Color(0xFF64748B)
                 )
             }
 
-            // Route Binding Selector
+            // Route Binding Selector (Tactile Ring)
             if (isInteractive) {
                 Box(
                     modifier = Modifier
-                        .size(24.dp)
+                        .size(26.dp)
                         .clip(CircleShape)
                         .border(
                             width = 1.5.dp,
-                            color = if (isSelected) WePlayTheme.colors.accent else WePlayTheme.colors.separator,
+                            color = if (isSelected) Color(0xFF00E5C8) else Color(0xFF475569),
                             shape = CircleShape
                         )
-                        .background(if (isSelected) WePlayTheme.colors.accent else Color.Transparent)
+                        .background(if (isSelected) Color(0xFF003830) else Color.Transparent)
                         .clickable { onToggleSelect(device.id) },
                     contentAlignment = Alignment.Center
                 ) {
                     if (isSelected) {
                         Box(
                             modifier = Modifier
-                                .size(8.dp)
+                                .size(10.dp)
                                 .clip(CircleShape)
-                                .background(WePlayTheme.colors.canvas)
+                                .background(Color(0xFF00E5C8))
                         )
                     }
                 }
@@ -141,25 +132,25 @@ fun OutputRouteCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             val (statusText, statusColor) = when (device.status) {
-                ConnectionStatus.AVAILABLE -> Pair("AVAILABLE", WePlayTheme.colors.textSecondary)
-                ConnectionStatus.CONNECTING -> Pair("CONNECTING...", WePlayTheme.colors.accent)
-                ConnectionStatus.CONNECTED -> Pair("CONNECTED", WePlayTheme.colors.textPrimary)
-                ConnectionStatus.AUDIO_READY -> Pair("AUDIO READY", WePlayTheme.colors.accent)
-                ConnectionStatus.PLAYING -> Pair("STREAMING", WePlayTheme.colors.accent)
-                ConnectionStatus.SYNC_WARNING -> Pair("SYNC WARNING", WePlayTheme.colors.warning)
-                ConnectionStatus.RECONNECTING -> Pair("RECONNECTING", WePlayTheme.colors.warning)
-                ConnectionStatus.UNSUPPORTED -> Pair("UNSUPPORTED ROUTE", WePlayTheme.colors.textSecondary)
+                ConnectionStatus.AVAILABLE -> Pair("AVAILABLE", Color(0xFF64748B))
+                ConnectionStatus.CONNECTING -> Pair("CONNECTING...", Color(0xFF38BDF8))
+                ConnectionStatus.CONNECTED -> Pair("CONNECTED", Color(0xFFCBD5E1))
+                ConnectionStatus.AUDIO_READY -> Pair("AUDIO READY", Color(0xFF00E5C8))
+                ConnectionStatus.PLAYING -> Pair("STREAMING", Color(0xFF00E5C8))
+                ConnectionStatus.SYNC_WARNING -> Pair("SYNC WARNING", Color(0xFFFF9500))
+                ConnectionStatus.RECONNECTING -> Pair("RECONNECTING", Color(0xFFFF9500))
+                ConnectionStatus.UNSUPPORTED -> Pair("UNSUPPORTED ROUTE", Color(0xFF475569))
             }
 
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(statusColor.copy(alpha = 0.12f))
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(statusColor.copy(alpha = 0.15f))
                     .padding(horizontal = 6.dp, vertical = 2.dp)
             ) {
                 Text(
                     text = statusText,
-                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 8.sp),
                     color = statusColor
                 )
             }
@@ -170,14 +161,14 @@ fun OutputRouteCard(
                 val drift = device.syncMetrics.estimatedDriftMs
                 Text(
                     text = "${if (drift >= 0) "+$drift" else "$drift"}ms drift • ${device.syncMetrics.roundTripTimeMs.toInt()}ms RTT",
-                    style = WePlayTheme.typography.tabularMetric.copy(fontSize = 10.sp),
-                    color = if (drift > 15.0) WePlayTheme.colors.warning else WePlayTheme.colors.textSecondary
+                    style = WePlayTheme.typography.tabularMetric.copy(fontSize = 9.sp),
+                    color = if (drift > 15.0) Color(0xFFFF9500) else Color(0xFF94A3B8)
                 )
             } else if (device.transport == TransportType.BLUETOOTH_A2DP) {
                 Text(
                     text = "Single route only",
-                    style = WePlayTheme.typography.tabularMetric.copy(fontSize = 10.sp),
-                    color = WePlayTheme.colors.textSecondary
+                    style = WePlayTheme.typography.tabularMetric.copy(fontSize = 9.sp),
+                    color = Color(0xFF64748B)
                 )
             }
         }
@@ -185,11 +176,11 @@ fun OutputRouteCard(
         // Dedicated Volume Attenuator (Only offered when hardware route permits it)
         if (isSelected && isInteractive) {
             Spacer(modifier = Modifier.height(10.dp))
-            HiFiVolumeSlider(
+            TactileConsoleFader(
                 value = device.volume,
                 onValueChange = { onVolumeChange(device.id, it) },
                 enabled = device.capability.supportsVolumeAttenuation,
-                unsupportedReason = if (!device.capability.supportsVolumeAttenuation) "Fixed line-out • Direct hardware attenuation" else null
+                label = "ENDPOINT ATTENUATION"
             )
         }
 
@@ -199,7 +190,7 @@ fun OutputRouteCard(
             Text(
                 text = device.statusMessage,
                 style = WePlayTheme.typography.bodyMedium.copy(fontSize = 11.sp),
-                color = WePlayTheme.colors.textSecondary
+                color = Color(0xFF94A3B8)
             )
         }
     }

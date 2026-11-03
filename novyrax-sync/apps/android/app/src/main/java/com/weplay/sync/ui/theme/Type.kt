@@ -45,6 +45,12 @@ data class WePlayTypography(
         fontSize = 12.sp,
         lineHeight = 17.sp
     ),
+    val bodySmall: TextStyle = TextStyle(
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Normal,
+        fontSize = 11.sp,
+        lineHeight = 15.sp
+    ),
     val labelSmall: TextStyle = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.SemiBold,

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,16 +19,19 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.weplay.sync.shared.model.DeviceGroup
@@ -51,87 +55,132 @@ fun LibraryAndGroupsScreen(
     onSaveCurrentGroup: () -> Unit,
     onBack: () -> Unit
 ) {
-    var selectedTab by remember { mutableStateOf(0) } // 0 = Tracks, 1 = Saved Rooms, 2 = Local Storage
+    var selectedTab by remember { mutableIntStateOf(0) } // 0 = CURATED ALBUMS, 1 = TRACKS, 2 = SAVED ROOMS
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(WePlayTheme.colors.canvas)
+            .background(Color(0xFF0C0F14))
             .statusBarsPadding()
             .navigationBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 12.dp)
+            .padding(horizontal = 22.dp, vertical = 10.dp)
     ) {
-        // Nav Header
+        // 1. Navigation Header
         Row(
             modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(3.dp))
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color(0xFF19202A))
+                    .border(1.dp, Color(0xFF283442), RoundedCornerShape(4.dp))
                     .clickable { onBack() }
-                    .padding(vertical = 4.dp, horizontal = 2.dp)
+                    .padding(horizontal = 10.dp, vertical = 5.dp)
             ) {
                 Text(
-                    text = "‹ ATELIER",
-                    style = WePlayTheme.typography.labelSmall,
-                    color = WePlayTheme.colors.textPrimary
+                    text = "‹ BACK",
+                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    color = Color(0xFFF1F5F9)
                 )
             }
-            Spacer(modifier = Modifier.width(16.dp))
+
             Text(
-                text = "EDITORIAL COLLECTION",
-                style = WePlayTheme.typography.labelSmall,
-                color = WePlayTheme.colors.textSecondary
+                text = "CURATED AUDIO COLLECTION",
+                style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 1.2.sp),
+                color = Color(0xFF00E5C8)
             )
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
-        // Atelier Mode Switcher (Clean, sharp tabs)
+        // 2. Tab Switcher
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, WePlayTheme.colors.separator, RoundedCornerShape(3.dp))
-                .clip(RoundedCornerShape(3.dp))
+                .clip(RoundedCornerShape(6.dp))
+                .background(Color(0xFF141922))
+                .border(1.dp, Color(0xFF222B38), RoundedCornerShape(6.dp))
+                .padding(3.dp)
         ) {
-            listOf("TRACKS", "SAVED ROOMS", "STORAGE").forEachIndexed { index, title ->
+            listOf("CURATED ALBUMS", "FLAC TRACKS", "ROOM PRESETS").forEachIndexed { index, title ->
+                val isSelected = selectedTab == index
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .background(if (selectedTab == index) WePlayTheme.colors.textPrimary else WePlayTheme.colors.surface)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(if (isSelected) Color(0xFF00E5C8) else Color.Transparent)
                         .clickable { selectedTab = index }
-                        .padding(vertical = 9.dp),
+                        .padding(vertical = 7.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = title,
-                        style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                        color = if (selectedTab == index) WePlayTheme.colors.canvas else WePlayTheme.colors.textPrimary
+                        style = WePlayTheme.typography.labelSmall.copy(
+                            fontSize = 9.sp,
+                            color = if (isSelected) Color(0xFF0A0D12) else Color(0xFF94A3B8)
+                        )
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         when (selectedTab) {
             0 -> {
+                // CURATED ALBUMS: Rich visual cards (Image 1 & 2 reference)
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    item {
+                        CuratedAlbumCard(
+                            title = "Charcoal",
+                            artist = "Brambles",
+                            year = "2012",
+                            format = "FLAC 96kHz / 24-bit",
+                            accentColor = Color(0xFFF27B58),
+                            description = "Atmospheric acoustic textures, gentle piano and decaying woodcut ambient.",
+                            onPlay = {
+                                libraryTracks.firstOrNull()?.let { onTrackSelect(it) }
+                            }
+                        )
+                    }
+
+                    item {
+                        CuratedAlbumCard(
+                            title = "Ambient 1: Music for Airports",
+                            artist = "Brian Eno",
+                            year = "1978",
+                            format = "ALAC 192kHz / 24-bit",
+                            accentColor = Color(0xFF5878D9),
+                            description = "Landmark minimalist sound installations engineered for acoustic reflection.",
+                            onPlay = {
+                                libraryTracks.firstOrNull()?.let { onTrackSelect(it) }
+                            }
+                        )
+                    }
+
+                    item {
+                        CuratedAlbumCard(
+                            title = "Ravedeath, 1972",
+                            artist = "Tim Hecker",
+                            year = "2011",
+                            format = "FLAC 48kHz / 24-bit",
+                            accentColor = Color(0xFF9A86C8),
+                            description = "Pipe organs, tape decay, and spatial resonance recorded inside Reykjavík cathedral.",
+                            onPlay = {
+                                libraryTracks.firstOrNull()?.let { onTrackSelect(it) }
+                            }
+                        )
+                    }
+                }
+            }
+
+            1 -> {
                 // TRACKS LIST
-                Text(
-                    text = "${libraryTracks.size} Lossless FLAC Masters",
-                    style = WePlayTheme.typography.displayLarge.copy(fontSize = 20.sp),
-                    color = WePlayTheme.colors.textPrimary
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Indexed directly from on-device storage. No cloud dependencies.",
-                    style = WePlayTheme.typography.bodyMedium,
-                    color = WePlayTheme.colors.textSecondary
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -140,68 +189,97 @@ fun LibraryAndGroupsScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(WePlayTheme.colors.surface)
-                                .border(1.dp, WePlayTheme.colors.separator, RoundedCornerShape(3.dp))
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color(0xFF141922))
+                                .border(1.dp, Color(0xFF222B38), RoundedCornerShape(6.dp))
                                 .clickable { onTrackSelect(track) }
                                 .padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF1C2430)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "▶",
+                                    style = WePlayTheme.typography.titleMedium.copy(fontSize = 12.sp),
+                                    color = Color(0xFF00E5C8)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = track.title,
-                                    style = WePlayTheme.typography.titleMedium,
-                                    color = WePlayTheme.colors.textPrimary
+                                    style = WePlayTheme.typography.titleMedium.copy(fontSize = 13.sp),
+                                    color = Color(0xFFF1F5F9)
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = "${track.artist} • ${track.album}",
-                                    style = WePlayTheme.typography.bodyMedium.copy(fontSize = 11.sp),
-                                    color = WePlayTheme.colors.textSecondary
+                                    style = WePlayTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                                    color = Color(0xFF777D86)
                                 )
                             }
-                            Text(
-                                text = track.format,
-                                style = WePlayTheme.typography.tabularMetric.copy(fontSize = 10.sp),
-                                color = WePlayTheme.colors.accent
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(3.dp))
+                                    .background(Color(0xFF1C2533))
+                                    .padding(horizontal = 6.dp, vertical = 3.dp)
+                            ) {
+                                Text(
+                                    text = track.format,
+                                    style = WePlayTheme.typography.tabularMetric.copy(fontSize = 8.sp),
+                                    color = Color(0xFF00E5C8)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(10.dp))
+
                             Text(
                                 text = track.durationFormatted,
-                                style = WePlayTheme.typography.tabularMetric,
-                                color = WePlayTheme.colors.textSecondary
+                                style = WePlayTheme.typography.tabularMetric.copy(fontSize = 10.sp),
+                                color = Color(0xFF94A3B8)
                             )
                         }
                     }
                 }
             }
 
-            1 -> {
-                // SAVED ROOMS
+            2 -> {
+                // ROOM PRESETS
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "ROOM PRESETS",
-                        style = WePlayTheme.typography.labelSmall,
-                        color = WePlayTheme.colors.textSecondary
+                        text = "SAVED SOUNDSTAGE PRESETS",
+                        style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 1.sp),
+                        color = Color(0xFF777D86)
                     )
+
                     Box(
                         modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(Color(0xFF00E5C8))
                             .clickable { onSaveCurrentGroup() }
-                            .padding(4.dp)
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Text(
-                            text = "+ SAVE SETUP",
-                            style = WePlayTheme.typography.labelSmall,
-                            color = WePlayTheme.colors.accent
+                            text = "+ SAVE PRESET",
+                            style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                            color = Color(0xFF0B1017)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 LazyColumn(
                     modifier = Modifier.weight(1f),
@@ -211,73 +289,160 @@ fun LibraryAndGroupsScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(WePlayTheme.colors.surface)
-                                .border(1.dp, WePlayTheme.colors.separator, RoundedCornerShape(4.dp))
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFF141922))
+                                .border(1.dp, Color(0xFF222B38), RoundedCornerShape(8.dp))
                                 .padding(14.dp)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = group.name,
-                                    style = WePlayTheme.typography.titleMedium,
-                                    color = WePlayTheme.colors.textPrimary,
-                                    modifier = Modifier.weight(1f)
-                                )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = group.name,
+                                        style = WePlayTheme.typography.titleMedium.copy(fontSize = 14.sp),
+                                        color = Color(0xFFF1F5F9)
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "${group.deviceIds.size} designated audio sinks configured",
+                                        style = WePlayTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                        color = Color(0xFF777D86)
+                                    )
+                                }
+
                                 Box(
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(3.dp))
-                                        .background(WePlayTheme.colors.textPrimary)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(Color(0xFF1E2836))
+                                        .border(1.dp, Color(0xFF00E5C8), RoundedCornerShape(4.dp))
                                         .clickable { onApplyGroup(group) }
-                                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                                        .padding(horizontal = 10.dp, vertical = 6.dp)
                                 ) {
                                     Text(
                                         text = "BIND SINK",
-                                        style = WePlayTheme.typography.labelSmall,
-                                        color = WePlayTheme.colors.canvas
+                                        style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                        color = Color(0xFF00E5C8)
                                     )
                                 }
                             }
-                            Spacer(modifier = Modifier.height(3.dp))
-                            Text(
-                                text = "${group.deviceIds.size} designated audio sinks configured",
-                                style = WePlayTheme.typography.bodyMedium.copy(fontSize = 11.sp),
-                                color = WePlayTheme.colors.textSecondary
-                            )
                         }
                     }
                 }
             }
+        }
+    }
+}
 
-            2 -> {
-                // STORAGE & LOCAL-FIRST
+@Composable
+private fun CuratedAlbumCard(
+    title: String,
+    artist: String,
+    year: String,
+    format: String,
+    accentColor: Color,
+    description: String,
+    onPlay: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                Brush.verticalGradient(
+                    listOf(accentColor.copy(alpha = 0.15f), Color(0xFF131720))
+                )
+            )
+            .border(1.dp, Color(0xFF232D3B), RoundedCornerShape(12.dp))
+            .clickable { onPlay() }
+            .padding(16.dp)
+    ) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Vinyl / Album Artwork Mockup
+                Box(
+                    modifier = Modifier
+                        .size(72.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFF0E1217))
+                        .border(1.dp, accentColor.copy(alpha = 0.5f), RoundedCornerShape(8.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(54.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF1A222E))
+                            .border(1.dp, Color(0xFF334155), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(16.dp)
+                                .clip(CircleShape)
+                                .background(accentColor)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(14.dp))
+
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Local Storage & Zero Telemetry",
-                        style = WePlayTheme.typography.titleLarge,
-                        color = WePlayTheme.colors.textPrimary
+                        text = title,
+                        style = WePlayTheme.typography.titleMedium.copy(fontSize = 15.sp),
+                        color = Color(0xFFF1F5F9)
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "$artist • $year",
+                        style = WePlayTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                        color = Color(0xFF94A3B8)
                     )
                     Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = "WePlay runs entirely on-device decoders and local UDP socket transports. No accounts, listening telemetry, or media streams are relayed to cloud servers.",
-                        style = WePlayTheme.typography.bodyMedium,
-                        color = WePlayTheme.colors.textSecondary
-                    )
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(Color(0xFF1E2836))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = format,
+                            style = WePlayTheme.typography.tabularMetric.copy(fontSize = 8.sp),
+                            color = Color(0xFF00E5C8)
+                        )
+                    }
+                }
+            }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
+            Text(
+                text = description,
+                style = WePlayTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 15.sp),
+                color = Color(0xFF777D86)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color(0xFF00E5C8))
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
                     Text(
-                        text = "Dynamic Buffer Re-alignment",
-                        style = WePlayTheme.typography.titleMedium,
-                        color = WePlayTheme.colors.textPrimary
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "WePlay continuously computes round-trip delay and clock offsets (θ) using SNTP protocol over Wi-Fi companion receivers.",
-                        style = WePlayTheme.typography.bodyMedium,
-                        color = WePlayTheme.colors.textSecondary
+                        text = "PLAY MASTER",
+                        style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 0.8.sp),
+                        color = Color(0xFF0A0D12)
                     )
                 }
             }

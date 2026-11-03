@@ -1,11 +1,5 @@
 package com.weplay.sync.ui.screens
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -15,7 +9,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -31,20 +24,25 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.weplay.sync.shared.model.AudioSharingSession
 import com.weplay.sync.shared.model.CaptureStatus
 import com.weplay.sync.shared.model.ConnectedListener
-import com.weplay.sync.shared.model.DeviceType
-import com.weplay.sync.ui.components.WePlayMark
+import com.weplay.sync.ui.components.HardwareVectorGlyph
+import com.weplay.sync.ui.components.TactileConsoleFader
+import com.weplay.sync.ui.components.TactileVUMeter
 import com.weplay.sync.ui.theme.WePlayTheme
 
 @Composable
@@ -62,12 +60,12 @@ fun LiveSessionHostScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(WePlayTheme.colors.canvas)
+            .background(Color(0xFF0A0D12))
             .statusBarsPadding()
             .navigationBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 12.dp)
+            .padding(horizontal = 20.dp, vertical = 12.dp)
     ) {
-        // 1. Top Navigation & Broadcast State
+        // 1. Studio Rack Top Bar
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -76,13 +74,15 @@ fun LiveSessionHostScreen(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
+                    .background(Color(0xFF131922))
+                    .border(1.dp, Color(0xFF263345), RoundedCornerShape(4.dp))
                     .clickable { onBack() }
-                    .padding(vertical = 4.dp, horizontal = 2.dp)
+                    .padding(vertical = 6.dp, horizontal = 10.dp)
             ) {
                 Text(
-                    text = "‹ BACK",
-                    style = WePlayTheme.typography.labelSmall,
-                    color = WePlayTheme.colors.textPrimary
+                    text = "‹ CONSOLE",
+                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    color = Color(0xFFCBD5E1)
                 )
             }
 
@@ -90,124 +90,154 @@ fun LiveSessionHostScreen(
             Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
-                    .background(if (isMuted) WePlayTheme.colors.separator else Color(0xFF24B9A6).copy(alpha = 0.15f))
-                    .border(1.dp, if (isMuted) WePlayTheme.colors.separator else Color(0xFF24B9A6), RoundedCornerShape(4.dp))
-                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                    .background(if (isMuted) Color(0xFF1E293B) else Color(0xFF003830))
+                    .border(1.dp, if (isMuted) Color(0xFF475569) else Color(0xFF00E5C8), RoundedCornerShape(4.dp))
+                    .padding(horizontal = 10.dp, vertical = 5.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
                     modifier = Modifier
-                        .size(8.dp)
+                        .size(7.dp)
                         .clip(CircleShape)
-                        .background(if (isMuted) Color.Gray else Color(0xFF24B9A6))
+                        .background(if (isMuted) Color(0xFF94A3B8) else Color(0xFF00E5C8))
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = if (isMuted) "MUTED" else "ON AIR",
-                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 1.sp),
-                    color = if (isMuted) WePlayTheme.colors.textSecondary else WePlayTheme.colors.textPrimary
+                    text = if (isMuted) "FEED MUTED" else "ON AIR • BROADCASTING",
+                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 1.2.sp),
+                    color = if (isMuted) Color(0xFF94A3B8) else Color(0xFF00E5C8)
                 )
             }
 
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
+                    .background(Color(0xFF131922))
+                    .border(1.dp, Color(0xFF263345), RoundedCornerShape(4.dp))
                     .clickable { onOpenDiagnostics() }
-                    .padding(vertical = 4.dp, horizontal = 2.dp)
+                    .padding(vertical = 6.dp, horizontal = 10.dp)
             ) {
                 Text(
-                    text = "STATS ›",
-                    style = WePlayTheme.typography.labelSmall,
-                    color = WePlayTheme.colors.accent
+                    text = "TELEMETRY ›",
+                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    color = Color(0xFF00E5C8)
                 )
             }
         }
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // 2. Session Title & Source Capture Status
+        // 2. Stream Channel Title & Real-time VU Levels
         Text(
             text = session.sessionName,
-            style = WePlayTheme.typography.displayLarge.copy(fontSize = 26.sp),
-            color = WePlayTheme.colors.textPrimary
+            style = WePlayTheme.typography.displayLarge.copy(fontSize = 26.sp, letterSpacing = (-0.6).sp),
+            color = Color(0xFFF8FAFC)
         )
         Spacer(modifier = Modifier.height(2.dp))
         Text(
-            text = "Capturing device audio • YouTube, Spotify, video & games",
-            style = WePlayTheme.typography.bodyMedium,
-            color = WePlayTheme.colors.textSecondary
+            text = "Capturing device audio • 48,000 Hz Stereo LPCM • Sliced 5ms WADP",
+            style = WePlayTheme.typography.bodyMedium.copy(fontSize = 11.sp),
+            color = Color(0xFF94A3B8)
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
-        // 3. Audio Stream QR Code & Session Key (Directly inspired by Google Pixel Auracast QR)
+        // Stereo Master Output VU Meter
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "L",
+                style = WePlayTheme.typography.tabularMetric.copy(fontSize = 9.sp),
+                color = Color(0xFF64748B)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            TactileVUMeter(
+                level = if (isMuted) 0f else 0.78f,
+                isPlaying = !isMuted,
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Spacer(modifier = Modifier.height(3.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "R",
+                style = WePlayTheme.typography.tabularMetric.copy(fontSize = 9.sp),
+                color = Color(0xFF64748B)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            TactileVUMeter(
+                level = if (isMuted) 0f else 0.74f,
+                isPlaying = !isMuted,
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // 3. Audio Stream QR Code & Session Key Chassis
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(WePlayTheme.colors.surface)
-                .border(1.dp, WePlayTheme.colors.separator, RoundedCornerShape(12.dp))
-                .padding(16.dp),
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color(0xFF111722))
+                .border(1.dp, Color(0xFF1E2838), RoundedCornerShape(10.dp))
+                .padding(14.dp),
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "Audio stream QR code",
-                    style = WePlayTheme.typography.titleMedium.copy(fontSize = 15.sp),
-                    color = WePlayTheme.colors.textPrimary
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = "To listen, other people can scan this code with WePlay or enter code",
-                    style = WePlayTheme.typography.bodyMedium.copy(fontSize = 11.sp),
-                    color = WePlayTheme.colors.textSecondary
+                    text = "PAIRING CODE & SCANNER",
+                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 1.2.sp),
+                    color = Color(0xFF64748B)
                 )
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 // High-Contrast Vector QR Canvas with centered WePlay mark
                 Box(
                     modifier = Modifier
-                        .size(170.dp)
-                        .clip(RoundedCornerShape(10.dp))
+                        .size(150.dp)
+                        .clip(RoundedCornerShape(8.dp))
                         .background(Color.White)
-                        .padding(12.dp),
+                        .padding(10.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     WePlayStreamQRCode(sessionCode = session.sessionCode)
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 // Session Code Pill with tap to copy
                 Row(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(WePlayTheme.colors.surfaceSubtle)
-                        .border(1.dp, WePlayTheme.colors.separator, RoundedCornerShape(6.dp))
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color(0xFF192230))
+                        .border(1.dp, Color(0xFF263345), RoundedCornerShape(4.dp))
                         .padding(horizontal = 14.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "SESSION CODE: ",
+                        text = "SESSION PIN: ",
                         style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                        color = WePlayTheme.colors.textSecondary
+                        color = Color(0xFF94A3B8)
                     )
                     Text(
                         text = session.sessionCode,
                         style = WePlayTheme.typography.tabularMetric.copy(fontSize = 14.sp),
-                        color = WePlayTheme.colors.textPrimary
+                        color = Color(0xFF00E5C8)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "📋",
-                        fontSize = 12.sp
-                    )
+                    Text(text = "📋", fontSize = 11.sp)
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         // 4. Connected Listeners Header
         Row(
@@ -217,19 +247,19 @@ fun LiveSessionHostScreen(
         ) {
             Text(
                 text = "CONNECTED LISTENERS (${session.listeners.size})",
-                style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
-                color = WePlayTheme.colors.textSecondary
+                style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp, fontSize = 9.sp),
+                color = Color(0xFF64748B)
             )
             Text(
                 text = "LPCM 48k • 30ms sync",
-                style = WePlayTheme.typography.tabularMetric.copy(fontSize = 10.sp),
-                color = WePlayTheme.colors.accent
+                style = WePlayTheme.typography.tabularMetric.copy(fontSize = 9.sp),
+                color = Color(0xFF00E5C8)
             )
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // 5. Connected Listeners List
+        // 5. Connected Listeners Rack List
         LazyColumn(
             modifier = Modifier
                 .weight(1f)
@@ -242,22 +272,22 @@ fun LiveSessionHostScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(6.dp))
-                            .background(WePlayTheme.colors.surface)
-                            .border(1.dp, WePlayTheme.colors.separator, RoundedCornerShape(6.dp))
-                            .padding(20.dp),
+                            .background(Color(0xFF111722))
+                            .border(1.dp, Color(0xFF1E2838), RoundedCornerShape(6.dp))
+                            .padding(18.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "WAITING FOR LISTENERS TO JOIN",
-                                style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.sp),
-                                color = WePlayTheme.colors.textSecondary
+                                text = "AWAITING COMPANION CONNECTIONS",
+                                style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp, fontSize = 9.sp),
+                                color = Color(0xFF64748B)
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "Have companion phones open WePlay on the same Wi-Fi, tap 'Join stream', and enter code ${session.sessionCode} or scan the QR above.",
+                                text = "Have other listeners open WePlay on the same Wi-Fi, tap 'Join stream', and enter PIN ${session.sessionCode} or point camera at the QR above.",
                                 style = WePlayTheme.typography.bodyMedium.copy(fontSize = 11.sp, lineHeight = 16.sp),
-                                color = WePlayTheme.colors.textSecondary,
+                                color = Color(0xFF94A3B8),
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
                             )
                         }
@@ -265,7 +295,7 @@ fun LiveSessionHostScreen(
                 }
             } else {
                 items(session.listeners) { listener ->
-                    ConnectedListenerCard(
+                    ListenerConsoleRackCard(
                         listener = listener,
                         onDisconnect = { onRemoveListener(listener.id) }
                     )
@@ -275,24 +305,7 @@ fun LiveSessionHostScreen(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // 6. Background Activity Guidance Notice
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(6.dp))
-                .background(WePlayTheme.colors.surfaceSubtle)
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-        ) {
-            Text(
-                text = "💡 Switch to YouTube, Spotify, or any media app. WePlay will keep streaming your phone's audio in the background.",
-                style = WePlayTheme.typography.bodyMedium.copy(fontSize = 11.sp),
-                color = WePlayTheme.colors.textSecondary
-            )
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // 7. Host Action Buttons (Mute Broadcast / Stop Session)
+        // 6. Action Switchgear (Mute Feed & Terminate Broadcast)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -300,34 +313,38 @@ fun LiveSessionHostScreen(
             // Mute / Unmute Button
             Box(
                 modifier = Modifier
-                    .weight(0.7f)
+                    .weight(0.8f)
                     .clip(RoundedCornerShape(6.dp))
-                    .background(WePlayTheme.colors.surface)
-                    .border(1.dp, WePlayTheme.colors.separator, RoundedCornerShape(6.dp))
+                    .background(Color(0xFF131922))
+                    .border(1.dp, Color(0xFF263345), RoundedCornerShape(6.dp))
                     .clickable { onToggleMute() }
                     .padding(vertical = 14.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = if (isMuted) "UNMUTE STREAM" else "MUTE STREAM",
-                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                    color = WePlayTheme.colors.textPrimary
+                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    color = Color(0xFFF1F5F9)
                 )
             }
 
-            // Stop Session Button
+            // Emergency Stop Session Button
             Box(
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(1.2f)
                     .clip(RoundedCornerShape(6.dp))
-                    .background(Color(0xFFE25241))
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color(0xFFFF453A), Color(0xFFD63031))
+                        )
+                    )
                     .clickable { onStopSharing() }
                     .padding(vertical = 14.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "END SHARING SESSION",
-                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 11.sp, letterSpacing = 0.8.sp),
+                    text = "END BROADCAST SESSION",
+                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 11.sp, letterSpacing = 0.8.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
                     color = Color.White
                 )
             }
@@ -336,67 +353,71 @@ fun LiveSessionHostScreen(
 }
 
 @Composable
-fun ConnectedListenerCard(
+fun ListenerConsoleRackCard(
     listener: ConnectedListener,
     onDisconnect: () -> Unit
 ) {
+    var volume by remember { mutableFloatStateOf(0.85f) }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(6.dp))
-            .background(WePlayTheme.colors.surface)
-            .border(1.dp, WePlayTheme.colors.separator, RoundedCornerShape(6.dp))
+            .background(Color(0xFF111722))
+            .border(1.dp, Color(0xFF1E2838), RoundedCornerShape(6.dp))
             .padding(12.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(34.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(WePlayTheme.colors.surfaceSubtle),
-                contentAlignment = Alignment.Center
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = when (listener.deviceType) {
-                        DeviceType.HEADPHONES -> "🎧"
-                        DeviceType.SPEAKER -> "🔊"
-                        else -> "📱"
-                    },
-                    fontSize = 16.sp
-                )
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color(0xFF192230)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    HardwareVectorGlyph(type = listener.deviceType, tint = Color(0xFF00E5C8))
+                }
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = listener.name,
+                        style = WePlayTheme.typography.titleMedium.copy(fontSize = 13.sp),
+                        color = Color(0xFFF1F5F9)
+                    )
+                    Text(
+                        text = "${listener.transport.displayName} • +${listener.clockOffsetMs}ms drift • ${listener.rttMs}ms RTT",
+                        style = WePlayTheme.typography.tabularMetric.copy(fontSize = 9.sp),
+                        color = Color(0xFF64748B)
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .clickable { onDisconnect() }
+                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = "DROP",
+                        style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                        color = Color(0xFFFF453A)
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = listener.name,
-                    style = WePlayTheme.typography.titleMedium.copy(fontSize = 13.sp),
-                    color = WePlayTheme.colors.textPrimary
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = "${listener.transport.displayName} • +${listener.clockOffsetMs}ms drift • ${listener.rttMs}ms RTT",
-                    style = WePlayTheme.typography.tabularMetric.copy(fontSize = 10.sp),
-                    color = WePlayTheme.colors.textSecondary
-                )
-            }
-
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(4.dp))
-                    .clickable { onDisconnect() }
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = "DISCONNECT",
-                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                    color = Color(0xFFE25241)
-                )
-            }
+            TactileConsoleFader(
+                value = volume,
+                onValueChange = { volume = it },
+                label = "REMOTE ATTENUATION"
+            )
         }
     }
 }
@@ -410,7 +431,6 @@ fun WePlayStreamQRCode(sessionCode: String) {
         // Draw clean high-fidelity QR Code matrix with 3 standard finder patterns
         drawRect(color = Color.White, size = size)
 
-        // Draw 3 corner finder patterns
         val cornerPositions = listOf(
             Pair(0, 0),
             Pair(totalCells - 7, 0),
@@ -466,7 +486,7 @@ fun WePlayStreamQRCode(sessionCode: String) {
 
         // Center branding emblem
         drawCircle(
-            color = Color(0xFF24B9A6),
+            color = Color(0xFF00E5C8),
             radius = cellSize * 2.2f,
             center = Offset(size.width / 2f, size.height / 2f)
         )

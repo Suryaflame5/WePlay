@@ -25,11 +25,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.weplay.sync.shared.model.AudioOutputDevice
-import com.weplay.sync.ui.components.HiFiVolumeSlider
 import com.weplay.sync.ui.components.OutputRouteCard
+import com.weplay.sync.ui.components.TactileConsoleFader
+import com.weplay.sync.ui.components.TactileVUMeter
 import com.weplay.sync.ui.components.WePlayMark
 import com.weplay.sync.ui.theme.WePlayTheme
 
@@ -50,140 +53,138 @@ fun MultiOutputRoomScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(WePlayTheme.colors.canvas)
+            .background(Color(0xFF0C0F14))
             .statusBarsPadding()
             .navigationBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 12.dp)
+            .padding(horizontal = 22.dp, vertical = 10.dp)
     ) {
-        // Top Navigation Header
+        // 1. Studio Rack Top Bar
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                WePlayMark(size = 24.dp)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "AUDIO ROOM",
-                    style = WePlayTheme.typography.labelSmall,
-                    color = WePlayTheme.colors.textSecondary
-                )
+                WePlayMark(size = 28.dp)
+                Spacer(modifier = Modifier.width(10.dp))
+                Column {
+                    Text(
+                        text = "MULTI-DESTINATION ROOM",
+                        style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 1.2.sp),
+                        color = Color(0xFF00E5C8)
+                    )
+                    Text(
+                        text = "PTP CLOCK SYNCHRONIZATION",
+                        style = WePlayTheme.typography.labelSmall.copy(fontSize = 8.sp, color = Color(0xFF777D86))
+                    )
+                }
             }
+
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(3.dp))
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color(0xFF19202A))
+                    .border(1.dp, Color(0xFF283442), RoundedCornerShape(4.dp))
                     .clickable { onClose() }
-                    .padding(vertical = 4.dp, horizontal = 4.dp)
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
             ) {
                 Text(
                     text = "CLOSE ✕",
-                    style = WePlayTheme.typography.labelSmall,
-                    color = WePlayTheme.colors.textPrimary
+                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    color = Color(0xFFF1F5F9)
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        // Atelier Title & Synchronized Topology Summary
-        Text(
-            text = "Active Audio Room",
-            style = WePlayTheme.typography.displayLarge.copy(fontSize = 24.sp),
-            color = WePlayTheme.colors.textPrimary
-        )
-        Spacer(modifier = Modifier.height(3.dp))
-        Text(
-            text = "$activeSinksCount destinations bound to shared master clock",
-            style = WePlayTheme.typography.bodyMedium,
-            color = WePlayTheme.colors.textSecondary
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Master Attenuation Module (Hi-Fi physical console inspired)
+        // 2. Master Attenuation Rack Unit
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(4.dp))
-                .background(WePlayTheme.colors.surface)
-                .border(1.dp, WePlayTheme.colors.separator, RoundedCornerShape(4.dp))
-                .padding(16.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color(0xFF131922))
+                .border(1.dp, Color(0xFF232D3B), RoundedCornerShape(8.dp))
+                .padding(14.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
                     Text(
-                        text = "MASTER ATTENUATION",
-                        style = WePlayTheme.typography.labelSmall.copy(color = WePlayTheme.colors.textPrimary)
+                        text = "MASTER BUS ATTENUATION",
+                        style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 1.sp),
+                        color = Color(0xFFF1F5F9)
                     )
                     Text(
-                        text = "Global analog-modeled output level",
-                        style = WePlayTheme.typography.bodyMedium.copy(fontSize = 11.sp),
-                        color = WePlayTheme.colors.textSecondary
+                        text = "Global analog console reference level",
+                        style = WePlayTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                        color = Color(0xFF777D86)
                     )
                 }
 
-                Spacer(modifier = Modifier.weight(1f))
-
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(3.dp))
-                        .background(if (isMasterMuted) WePlayTheme.colors.warning.copy(alpha = 0.15f) else WePlayTheme.colors.surfaceSubtle)
-                        .clickable { onMasterMuteToggle() }
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = if (isMasterMuted) "UNMUTE" else "MUTE ALL",
-                        style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                        color = if (isMasterMuted) WePlayTheme.colors.warning else WePlayTheme.colors.textSecondary
-                    )
-                }
+                // Stereo Master Peak VU
+                TactileVUMeter(
+                    level = if (isMasterMuted) 0f else masterVolume,
+                    isPlaying = !isMasterMuted,
+                    barCount = 14,
+                    modifier = Modifier.width(96.dp)
+                )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            HiFiVolumeSlider(
+            TactileConsoleFader(
                 value = if (isMasterMuted) 0f else masterVolume,
                 onValueChange = onMasterVolumeChange,
+                label = "MASTER BUS",
                 enabled = !isMasterMuted
             )
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(18.dp))
 
-        // Destination Sinks Header with + Add Action
+        // 3. Assigned Destinations Section Header
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "ASSIGNED DESTINATIONS",
-                style = WePlayTheme.typography.labelSmall,
-                color = WePlayTheme.colors.textSecondary
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(if (activeSinksCount > 0) Color(0xFF00E5C8) else Color(0xFFFF9500))
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "$activeSinksCount ACTIVE SINKS IN CLOCK SYNC",
+                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 1.sp),
+                    color = Color(0xFFF1F5F9)
+                )
+            }
 
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(WePlayTheme.colors.textPrimary)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color(0xFF00E5C8))
                     .clickable { onAddDeviceClick() }
-                    .padding(horizontal = 10.dp, vertical = 4.dp)
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
             ) {
                 Text(
-                    text = "+ ADD OUTPUT",
-                    style = WePlayTheme.typography.labelSmall,
-                    color = WePlayTheme.colors.canvas
+                    text = "+ ADD HARDWARE",
+                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 0.8.sp),
+                    color = Color(0xFF0B1017)
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
-        // Individual Destination Cards
+        // 4. Output Route Cards with Hardware Vector Glyphs & Console Faders
         LazyColumn(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(10.dp)

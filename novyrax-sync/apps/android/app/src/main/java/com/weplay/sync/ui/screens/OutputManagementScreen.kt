@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,11 +28,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.weplay.sync.shared.model.AudioOutputDevice
-import com.weplay.sync.shared.model.ConnectionStatus
-import com.weplay.sync.shared.model.DeviceType
-import com.weplay.sync.shared.model.TransportType
-import com.weplay.sync.ui.components.HiFiVolumeSlider
 import com.weplay.sync.ui.components.OutputRouteCard
+import com.weplay.sync.ui.components.TactileConsoleFader
+import com.weplay.sync.ui.components.TactileVUMeter
 import com.weplay.sync.ui.components.WePlayMark
 import com.weplay.sync.ui.theme.WePlayTheme
 
@@ -55,10 +52,10 @@ fun OutputManagementScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(WePlayTheme.colors.canvas)
+            .background(Color(0xFF0A0D12))
             .statusBarsPadding()
             .navigationBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 12.dp)
+            .padding(horizontal = 20.dp, vertical = 12.dp)
     ) {
         // Nav Header
         Row(
@@ -70,48 +67,50 @@ fun OutputManagementScreen(
                 WePlayMark(size = 24.dp)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "OUTPUT MANAGEMENT",
-                    style = WePlayTheme.typography.labelSmall,
-                    color = WePlayTheme.colors.textSecondary
+                    text = "OUTPUT ROUTING STUDIO",
+                    style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp, fontSize = 9.sp),
+                    color = Color(0xFF64748B)
                 )
             }
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
+                    .background(Color(0xFF131922))
+                    .border(1.dp, Color(0xFF263345), RoundedCornerShape(4.dp))
                     .clickable { onBack() }
-                    .padding(vertical = 4.dp, horizontal = 4.dp)
+                    .padding(vertical = 4.dp, horizontal = 8.dp)
             ) {
                 Text(
                     text = "CLOSE ✕",
-                    style = WePlayTheme.typography.labelSmall,
-                    color = WePlayTheme.colors.textPrimary
+                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    color = Color(0xFFCBD5E1)
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         Text(
             text = "Audio Destinations",
-            style = WePlayTheme.typography.displayLarge.copy(fontSize = 26.sp),
-            color = WePlayTheme.colors.textPrimary
+            style = WePlayTheme.typography.displayLarge.copy(fontSize = 28.sp, letterSpacing = (-0.6).sp),
+            color = Color(0xFFF8FAFC)
         )
         Spacer(modifier = Modifier.height(2.dp))
         Text(
-            text = "$activeCount active outputs receiving broadcast",
-            style = WePlayTheme.typography.bodyMedium,
-            color = WePlayTheme.colors.textSecondary
+            text = "$activeCount active endpoints receiving synchronized stream",
+            style = WePlayTheme.typography.bodyMedium.copy(fontSize = 11.sp),
+            color = Color(0xFF00E5C8)
         )
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        // Master Attenuation
+        // Master Attenuation Studio Chassis
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(8.dp))
-                .background(WePlayTheme.colors.surface)
-                .border(1.dp, WePlayTheme.colors.separator, RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color(0xFF111722))
+                .border(1.dp, Color(0xFF1E2838), RoundedCornerShape(10.dp))
                 .padding(16.dp)
         ) {
             Column {
@@ -122,42 +121,43 @@ fun OutputManagementScreen(
                 ) {
                     Column {
                         Text(
-                            text = "MASTER ATTENUATION",
-                            style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.sp),
-                            color = WePlayTheme.colors.textSecondary
+                            text = "MASTER CONSOLE ATTENUATION",
+                            style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp, fontSize = 9.sp),
+                            color = Color(0xFF64748B)
                         )
                         Text(
-                            text = "Global analog-modeled output level",
+                            text = "Global analog-modeled output bus",
                             style = WePlayTheme.typography.bodyMedium.copy(fontSize = 11.sp),
-                            color = WePlayTheme.colors.textSecondary
+                            color = Color(0xFF94A3B8)
                         )
                     }
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(4.dp))
-                            .background(WePlayTheme.colors.surfaceSubtle)
+                            .background(if (isMasterMuted) Color(0xFFFF3B30).copy(alpha = 0.15f) else Color(0xFF192230))
+                            .border(1.dp, if (isMasterMuted) Color(0xFFFF3B30) else Color(0xFF263345), RoundedCornerShape(4.dp))
                             .clickable { onMasterMuteToggle() }
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Text(
                             text = if (isMasterMuted) "UNMUTE ALL" else "MUTE ALL",
                             style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                            color = WePlayTheme.colors.textPrimary
+                            color = if (isMasterMuted) Color(0xFFFF3B30) else Color(0xFFF1F5F9)
                         )
                     }
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
-                Text(
-                    text = "${(masterVolume * 100).toInt()}%",
-                    style = WePlayTheme.typography.tabularMetric.copy(fontSize = 13.sp),
-                    color = WePlayTheme.colors.textPrimary
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                HiFiVolumeSlider(
+
+                TactileVUMeter(level = if (isMasterMuted) 0f else masterVolume, isPlaying = !isMasterMuted)
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                TactileConsoleFader(
                     value = masterVolume,
                     onValueChange = onMasterVolumeChange,
-                    enabled = !isMasterMuted
+                    enabled = !isMasterMuted,
+                    label = "GANGED MASTER BUS LEVEL"
                 )
             }
         }
@@ -171,21 +171,22 @@ fun OutputManagementScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "ASSIGNED DESTINATIONS",
-                style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
-                color = WePlayTheme.colors.textSecondary
+                text = "DISCOVERED DESTINATIONS",
+                style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp, fontSize = 9.sp),
+                color = Color(0xFF64748B)
             )
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
-                    .background(WePlayTheme.colors.textPrimary)
+                    .background(Color(0xFF003830))
+                    .border(1.dp, Color(0xFF00E5C8), RoundedCornerShape(4.dp))
                     .clickable { onScanDevices() }
-                    .padding(horizontal = 10.dp, vertical = 4.dp)
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
                 Text(
                     text = "+ SCAN SENSORS",
                     style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                    color = WePlayTheme.colors.canvas
+                    color = Color(0xFF00E5C8)
                 )
             }
         }
