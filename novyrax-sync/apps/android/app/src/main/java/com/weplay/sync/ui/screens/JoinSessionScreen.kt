@@ -1,5 +1,6 @@
 package com.weplay.sync.ui.screens
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,47 +12,65 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.weplay.sync.shared.model.NearbyStream
-import com.weplay.sync.shared.model.SharingTransport
-import com.weplay.sync.ui.components.InstrumentChassisCard
-import com.weplay.sync.ui.components.TactileConsoleFader
-import com.weplay.sync.ui.theme.AtelierChamfer
-import com.weplay.sync.ui.theme.AtelierGunmetal
-import com.weplay.sync.ui.theme.AtelierObsidian
-import com.weplay.sync.ui.theme.AtelierTextPrimary
-import com.weplay.sync.ui.theme.AtelierTextSecondary
-import com.weplay.sync.ui.theme.AtelierTray
-import com.weplay.sync.ui.theme.ElectricCobalt
-import com.weplay.sync.ui.theme.PrecisionCyan
-import com.weplay.sync.ui.theme.SignalVermilion
-import com.weplay.sync.ui.theme.WePlayTheme
+import com.weplay.sync.ui.components.FlowingCopperRibbon
+import com.weplay.sync.ui.components.WePlayIcon
+import com.weplay.sync.ui.components.WePlayIconType
+import com.weplay.sync.ui.components.WePlayStreamQRCode
+import com.weplay.sync.ui.theme.WePlayBorder
+import com.weplay.sync.ui.theme.WePlayBorderSubtle
+import com.weplay.sync.ui.theme.WePlayObsidian
+import com.weplay.sync.ui.theme.WePlayOrangeGlow
+import com.weplay.sync.ui.theme.WePlayOrangePrimary
+import com.weplay.sync.ui.theme.WePlayTextMuted
+import com.weplay.sync.ui.theme.WePlayTextPrimary
+import com.weplay.sync.ui.theme.WePlayTextSecondary
 
+/**
+ * Screen 4: Master Join Session Screen ("Join WePlay Session").
+ * Exact visual match to Screen 4 in the design reference:
+ * - Top Bar: Back arrow "<" + Scanner reticle "[ ]"
+ * - "Join WePlay Session" header + "Scan QR or enter PIN"
+ * - Large crisp QR code framed by 4 glowing orange corner registration brackets "[ ]"
+ * - Subtle "OR" horizontal divider
+ * - Pill capsule PIN input field with clear "(X)" button
+ * - Radiant molten orange pill button: "Join"
+ * - Helper tip: Headphone icon + "Adjust volume after joining"
+ * - Flowing metallic copper ribbon filament in the bottom backdrop
+ */
 @Composable
 fun JoinSessionScreen(
     isConnectedToHost: Boolean,
@@ -64,405 +83,237 @@ fun JoinSessionScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var enteredCode by remember { mutableStateOf("") }
-    var localVolume by remember { mutableFloatStateOf(0.85f) }
-    var syncOffsetMs by remember { mutableIntStateOf(0) }
+    var enteredPin by remember { mutableStateOf("WP-4829") }
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .background(AtelierObsidian)
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 10.dp)
+            .background(WePlayObsidian)
     ) {
-        // 1. Navigation Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        // Bottom Flowing Copper Ribbon
+        FlowingCopperRibbon(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .alpha(0.75f),
+            height = 180.dp
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 36.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Box(
+            // 1. Top Bar: Back Arrow & QR Scanner Icon
+            Row(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(AtelierTray)
-                    .border(1.dp, AtelierChamfer, RoundedCornerShape(4.dp))
-                    .clickable { onBack() }
-                    .padding(vertical = 5.dp, horizontal = 10.dp)
+                    .fillMaxWidth()
+                    .padding(horizontal = 22.dp, vertical = 14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "‹ BACK",
-                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                    color = AtelierTextPrimary
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Back",
+                    tint = WePlayTextPrimary,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable { onBack() }
+                )
+
+                WePlayIcon(
+                    type = WePlayIconType.CROP_RETICLE,
+                    tint = WePlayTextPrimary,
+                    size = 20.dp,
+                    modifier = Modifier.clickable { /* trigger scanner */ }
                 )
             }
-
-            Text(
-                text = if (isConnectedToHost) "LISTENER ACTIVE // SYNC LOCKED" else "RECEIVER EXPLORATION CONSOLE",
-                style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 1.2.sp),
-                color = if (isConnectedToHost) PrecisionCyan else ElectricCobalt
-            )
-        }
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        if (!isConnectedToHost) {
-            // Not connected: Search & Join Flow
-            Text(
-                text = "Join an Audio Stream",
-                style = WePlayTheme.typography.displayLarge.copy(fontSize = 24.sp),
-                color = AtelierTextPrimary
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = "Listen to an audio broadcast from another phone using your headphones.",
-                style = WePlayTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                color = AtelierTextSecondary
-            )
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // 2. Optical Reticle QR Camera Trigger Chassis
-            InstrumentChassisCard(
-                label = "OPTICAL MATRIX SCANNER",
-                statusIndicator = PrecisionCyan
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(AtelierTray)
-                        .border(1.dp, AtelierChamfer, RoundedCornerShape(6.dp))
-                        .clickable {
-                            if (nearbyStreams.isNotEmpty()) onConnectToStream(nearbyStreams.first())
-                        }
-                        .padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(AtelierGunmetal)
-                            .border(1.dp, PrecisionCyan, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = "⛶", fontSize = 18.sp, color = PrecisionCyan)
-                    }
-
-                    Spacer(modifier = Modifier.width(12.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Scan Host Broadcast Matrix",
-                            style = WePlayTheme.typography.titleMedium.copy(fontSize = 13.sp),
-                            color = AtelierTextPrimary
-                        )
-                        Text(
-                            text = "Point camera at host screen for zero-touch pairing",
-                            style = WePlayTheme.typography.bodySmall.copy(fontSize = 10.sp),
-                            color = AtelierTextSecondary
-                        )
-                    }
-
-                    Text(
-                        text = "SCAN ›",
-                        style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                        color = PrecisionCyan
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 3. Manual PIN Input Chassis
-            InstrumentChassisCard(
-                label = "MANUAL SESSION PIN",
-                statusIndicator = ElectricCobalt
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    OutlinedTextField(
-                        value = enteredCode,
-                        onValueChange = { if (it.length <= 6) enteredCode = it.uppercase() },
-                        modifier = Modifier.weight(1f),
-                        placeholder = {
-                            Text(
-                                text = "e.g. WP-4829",
-                                style = WePlayTheme.typography.tabularMetric.copy(fontSize = 13.sp),
-                                color = AtelierTextSecondary
-                            )
-                        },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters)
-                    )
-
-                    Spacer(modifier = Modifier.width(10.dp))
-
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(if (enteredCode.length >= 4) SignalVermilion else AtelierTray)
-                            .border(1.dp, if (enteredCode.length >= 4) SignalVermilion else AtelierChamfer, RoundedCornerShape(4.dp))
-                            .clickable(enabled = enteredCode.length >= 4) {
-                                onConnectByCode(enteredCode)
-                            }
-                            .padding(horizontal = 14.dp, vertical = 14.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "JOIN",
-                            style = WePlayTheme.typography.labelSmall.copy(
-                                fontSize = 10.sp,
-                                letterSpacing = 1.sp,
-                                color = if (enteredCode.length >= 4) Color.White else AtelierTextSecondary
-                            )
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // 4. Nearby Streams Roster
-            Text(
-                text = "NEARBY BROADCASTS DETECTED",
-                style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 1.sp),
-                color = AtelierTextSecondary
-            )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            // 2. Header & Subtitle
+            Text(
+                text = "Join WePlay Session",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = WePlayTextPrimary
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Scan QR or enter PIN",
+                fontSize = 13.sp,
+                color = WePlayTextSecondary
+            )
+
+            Spacer(modifier = Modifier.height(26.dp))
+
+            // 3. Central QR Code with 4 Glowing Orange Corner Reticles
+            Box(
+                modifier = Modifier
+                    .size(210.dp),
+                contentAlignment = Alignment.Center
             ) {
-                if (nearbyStreams.isEmpty()) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(AtelierGunmetal)
-                                .border(1.dp, AtelierChamfer, RoundedCornerShape(6.dp))
-                                .padding(20.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    text = "SCANNING LOCAL WI-FI SUBNET",
-                                    style = WePlayTheme.typography.labelSmall.copy(letterSpacing = 1.sp, fontSize = 9.sp),
-                                    color = AtelierTextSecondary
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "Ensure the host phone has tapped 'Start Audio Broadcast' on the same network.",
-                                    style = WePlayTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                                    color = AtelierTextSecondary,
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                                )
-                            }
-                        }
-                    }
-                } else {
-                    items(nearbyStreams) { stream ->
-                        NearbyStreamCard(
-                            stream = stream,
-                            onConnect = { onConnectToStream(stream) }
-                        )
-                    }
+                // Canvas drawing the 4 glowing corner brackets
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val w = this.size.width
+                    val h = this.size.height
+                    val bracketLen = 28.dp.toPx()
+                    val stroke = 3.dp.toPx()
+                    val bracketColor = WePlayOrangeGlow
+
+                    // Top-Left bracket
+                    drawLine(bracketColor, Offset(0f, 0f), Offset(bracketLen, 0f), stroke, cap = StrokeCap.Round)
+                    drawLine(bracketColor, Offset(0f, 0f), Offset(0f, bracketLen), stroke, cap = StrokeCap.Round)
+
+                    // Top-Right bracket
+                    drawLine(bracketColor, Offset(w, 0f), Offset(w - bracketLen, 0f), stroke, cap = StrokeCap.Round)
+                    drawLine(bracketColor, Offset(w, 0f), Offset(w, bracketLen), stroke, cap = StrokeCap.Round)
+
+                    // Bottom-Left bracket
+                    drawLine(bracketColor, Offset(0f, h), Offset(bracketLen, h), stroke, cap = StrokeCap.Round)
+                    drawLine(bracketColor, Offset(0f, h), Offset(0f, h - bracketLen), stroke, cap = StrokeCap.Round)
+
+                    // Bottom-Right bracket
+                    drawLine(bracketColor, Offset(w, h), Offset(w - bracketLen, h), stroke, cap = StrokeCap.Round)
+                    drawLine(bracketColor, Offset(w, h), Offset(w, h - bracketLen), stroke, cap = StrokeCap.Round)
                 }
-            }
-        } else {
-            // Connected Listener Session Interface
-            Text(
-                text = "Streaming Audio In Sync",
-                style = WePlayTheme.typography.displayLarge.copy(fontSize = 24.sp),
-                color = AtelierTextPrimary
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = "Connected to ${connectedHostName ?: "Host"} // Session ${connectedSessionCode ?: "WP-4829"}",
-                style = WePlayTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                color = PrecisionCyan
-            )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Receiver Output Status Chassis
-            InstrumentChassisCard(
-                label = "LOCAL RECEIVER STATUS",
-                statusIndicator = PrecisionCyan
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                // QR Code Container
+                Box(
+                    modifier = Modifier
+                        .size(175.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.White)
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(AtelierTray)
-                            .border(1.dp, PrecisionCyan, RoundedCornerShape(4.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = "🎧", fontSize = 16.sp)
-                    }
-
-                    Spacer(modifier = Modifier.width(12.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Playback Route: Bluetooth Headphones",
-                            style = WePlayTheme.typography.titleMedium.copy(fontSize = 13.sp),
-                            color = AtelierTextPrimary
-                        )
-                        Text(
-                            text = "Direct hardware output • Low-latency sync buffer: 28ms",
-                            style = WePlayTheme.typography.bodySmall.copy(fontSize = 10.sp),
-                            color = AtelierTextSecondary
-                        )
-                    }
+                    WePlayStreamQRCode(sessionCode = "WP-4829")
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(26.dp))
 
-            // Local Listener Console Fader
-            InstrumentChassisCard(
-                label = "PERSONAL ATTENUATION",
-                statusIndicator = SignalVermilion
+            // 4. "OR" Divider
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 48.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                TactileConsoleFader(
-                    value = localVolume,
-                    onValueChange = { localVolume = it },
-                    label = "LOCAL EARBUD GAIN"
+                HorizontalDivider(
+                    modifier = Modifier.weight(1f),
+                    color = WePlayBorderSubtle,
+                    thickness = 1.dp
                 )
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // Lip-Sync Video Delay Alignment
-            InstrumentChassisCard(
-                label = "VIDEO LIP-SYNC ALIGNMENT",
-                statusIndicator = ElectricCobalt
-            ) {
                 Text(
-                    text = "Calibrate audio delay (+ms) if watching a video on the host screen",
-                    style = WePlayTheme.typography.bodySmall.copy(fontSize = 10.sp),
-                    color = AtelierTextSecondary
+                    text = "OR",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = WePlayTextMuted,
+                    modifier = Modifier.padding(horizontal = 14.dp)
                 )
-                Spacer(modifier = Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    listOf(0, 15, 30, 45).forEach { ms ->
-                        val isSel = syncOffsetMs == ms
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(if (isSel) SignalVermilion else AtelierTray)
-                                .border(1.dp, if (isSel) SignalVermilion else AtelierChamfer, RoundedCornerShape(4.dp))
-                                .clickable { syncOffsetMs = ms }
-                                .padding(vertical = 8.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "+${ms}ms",
-                                style = WePlayTheme.typography.tabularMetric.copy(fontSize = 11.sp),
-                                color = if (isSel) Color.White else AtelierTextPrimary
-                            )
-                        }
-                    }
-                }
+                HorizontalDivider(
+                    modifier = Modifier.weight(1f),
+                    color = WePlayBorderSubtle,
+                    thickness = 1.dp
+                )
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            // Disconnect Button
+            // 5. Capsule PIN Input Field (Pill container with "WP-4829" + (X) clear icon)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(Color(0xFFFF3B30))
-                    .clickable { onLeaveSession() }
-                    .padding(vertical = 15.dp),
+                    .padding(horizontal = 32.dp)
+                    .height(52.dp)
+                    .clip(RoundedCornerShape(26.dp))
+                    .background(Color(0xFF101520))
+                    .border(1.dp, WePlayBorder, RoundedCornerShape(26.dp))
+                    .padding(horizontal = 20.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "DISCONNECT FROM BROADCAST",
-                    style = WePlayTheme.typography.labelSmall.copy(
-                        fontSize = 11.sp,
-                        letterSpacing = 1.sp,
-                        color = Color.White
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    BasicTextField(
+                        value = enteredPin,
+                        onValueChange = { enteredPin = it.uppercase() },
+                        textStyle = TextStyle(
+                            color = WePlayTextPrimary,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                            letterSpacing = 1.5.sp,
+                            textAlign = TextAlign.Center
+                        ),
+                        singleLine = true,
+                        cursorBrush = SolidColor(WePlayOrangePrimary),
+                        modifier = Modifier.weight(1f)
                     )
-                )
-            }
-        }
-    }
-}
 
-@Composable
-fun NearbyStreamCard(
-    stream: NearbyStream,
-    onConnect: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(6.dp))
-            .background(AtelierGunmetal)
-            .border(1.dp, AtelierChamfer, RoundedCornerShape(6.dp))
-            .padding(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+                    if (enteredPin.isNotEmpty()) {
+                        WePlayIcon(
+                            type = WePlayIconType.CANCEL,
+                            tint = WePlayTextMuted,
+                            size = 18.dp,
+                            modifier = Modifier.clickable { enteredPin = "" }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // 6. Primary Action Button: "Join" (Radiant Molten Orange Pill)
             Box(
                 modifier = Modifier
-                    .size(38.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(AtelierTray),
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp)
+                    .height(54.dp)
+                    .clip(RoundedCornerShape(27.dp))
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                WePlayOrangePrimary,
+                                WePlayOrangeGlow
+                            )
+                        )
+                    )
+                    .clickable {
+                        if (enteredPin.isNotBlank()) onConnectByCode(enteredPin)
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = if (stream.transport == SharingTransport.BLUETOOTH_AURACAST) "📻" else "📡",
-                    fontSize = 16.sp
+                    text = "Join",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    letterSpacing = 0.5.sp
                 )
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.height(22.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stream.streamName,
-                    style = WePlayTheme.typography.titleMedium.copy(fontSize = 13.sp),
-                    color = AtelierTextPrimary
-                )
-                Spacer(modifier = Modifier.height(1.dp))
-                Text(
-                    text = "${stream.hostName} • ${stream.transport.badge} • ${stream.listenerCount} listening",
-                    style = WePlayTheme.typography.bodySmall.copy(fontSize = 10.sp),
-                    color = AtelierTextSecondary
-                )
-            }
-
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(SignalVermilion)
-                    .clickable { onConnect() }
-                    .padding(horizontal = 12.dp, vertical = 7.dp)
+            // 7. Helper Tip: Headphone Icon + "Adjust volume after joining"
+            Row(
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                WePlayIcon(
+                    type = WePlayIconType.HEADPHONES,
+                    tint = WePlayOrangeGlow.copy(alpha = 0.85f),
+                    size = 14.dp
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "LISTEN",
-                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 0.8.sp),
-                    color = Color.White
+                    text = "Adjust volume after joining",
+                    fontSize = 12.sp,
+                    color = WePlayTextSecondary
                 )
             }
         }

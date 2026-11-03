@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -20,331 +19,360 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.weplay.sync.ui.theme.WePlayTheme
+import com.weplay.sync.ui.components.WePlayIcon
+import com.weplay.sync.ui.components.WePlayIconType
+import com.weplay.sync.ui.theme.WePlayBorder
+import com.weplay.sync.ui.theme.WePlayBorderSubtle
+import com.weplay.sync.ui.theme.WePlayObsidian
+import com.weplay.sync.ui.theme.WePlayOrangeGlow
+import com.weplay.sync.ui.theme.WePlaySurface
+import com.weplay.sync.ui.theme.WePlayTextMuted
+import com.weplay.sync.ui.theme.WePlayTextPrimary
+import com.weplay.sync.ui.theme.WePlayTextSecondary
 
+/**
+ * Screen 9: Master "Settings" Screen.
+ * Exact visual match to Screen 9 in the design reference:
+ * - Top Bar: "Settings" + search magnifying glass
+ * - User Profile Card: Cosmic avatar circle + "Nova User" + "nova@weplay.app" + chevron ">"
+ * - Section "Audio Settings":
+ *     1. Output Routing (chevron ">")
+ *     2. Latency Optimization ("Auto >")
+ *     3. Audio Quality ("Hi-Res >")
+ * - Section "General":
+ *     1. Appearance ("System >")
+ *     2. Notifications (chevron ">")
+ *     3. About WePlay (chevron ">")
+ */
 @Composable
 fun SettingsCompatibilityScreen(
     onOpenDiagnostics: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0C0F14))
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            .padding(horizontal = 22.dp, vertical = 10.dp)
-            .verticalScroll(rememberScrollState())
+            .background(WePlayObsidian)
     ) {
-        // 1. Navigation Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(Color(0xFF19202A))
-                    .border(1.dp, Color(0xFF283442), RoundedCornerShape(4.dp))
-                    .clickable { onBack() }
-                    .padding(horizontal = 10.dp, vertical = 5.dp)
-            ) {
-                Text(
-                    text = "‹ BACK",
-                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                    color = Color(0xFFF1F5F9)
-                )
-            }
-
-            Text(
-                text = "HAL SPEC & HARDWARE CONSTRAINTS",
-                style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 1.2.sp),
-                color = Color(0xFF00E5C8)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "Compatibility & Policy Matrix",
-            style = WePlayTheme.typography.displayLarge.copy(fontSize = 24.sp),
-            color = Color(0xFFF1F5F9)
-        )
-        Spacer(modifier = Modifier.height(3.dp))
-        Text(
-            text = "Honest, verifiable operating boundaries of Android AudioPlaybackCapture, DRM, and Auracast.",
-            style = WePlayTheme.typography.bodyMedium.copy(fontSize = 12.sp),
-            color = Color(0xFF777D86)
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // 2. System Permissions Status
-        Text(
-            text = "SYSTEM PERMISSIONS STATUS",
-            style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 1.sp),
-            color = Color(0xFF777D86)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        PermissionStatusCard(
-            title = "Audio Playback Capture",
-            subtitle = "Android MediaProjection token required for each cross-app capture session",
-            isGranted = true
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        PermissionStatusCard(
-            title = "Nearby Devices & Bluetooth",
-            subtitle = "Scan and advertise LE Audio Auracast and Bluetooth routes",
-            isGranted = true
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        PermissionStatusCard(
-            title = "Background Battery Optimization Exemption",
-            subtitle = "Allows uninterrupted audio distribution while switching away from WePlay",
-            isGranted = true
-        )
-
-        Spacer(modifier = Modifier.height(22.dp))
-
-        // 3. Source Application Support Matrix (Rigorous & Honest)
-        Text(
-            text = "SOURCE APPLICATION COMPATIBILITY MATRIX",
-            style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 1.sp),
-            color = Color(0xFF777D86)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        AppCompatibilityRow(
-            appName = "YouTube (Free & Premium)",
-            status = "CONDITIONAL",
-            statusColor = Color(0xFFFF9500),
-            description = "Standard user videos capture cleanly. Paid movies, rented titles, and Widevine DRM streams are silenced by the OS."
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        AppCompatibilityRow(
-            appName = "Spotify & Podcasts",
-            status = "CONDITIONAL",
-            statusColor = Color(0xFFFF9500),
-            description = "Standard media playback captures when target app doesn't set CAPTURE_POLICY_NONE. May vary across OEM Android skins."
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        AppCompatibilityRow(
-            appName = "Chrome & Web Browsers",
-            status = "CONDITIONAL",
-            statusColor = Color(0xFFFF9500),
-            description = "HTML5 audio/video tags allow capture by default. Web DRM video players in browser will be muted by Android HAL."
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        AppCompatibilityRow(
-            appName = "Mobile Games & Local Players",
-            status = "CONDITIONAL",
-            statusColor = Color(0xFFFF9500),
-            description = "Eligible if audio attributes use USAGE_MEDIA or USAGE_GAME. Custom low-latency OpenSL ES direct HAL streams may bypass capture."
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        AppCompatibilityRow(
-            appName = "DRM Services (Netflix, Prime, Disney+)",
-            status = "UNSUPPORTED (BY DESIGN)",
-            statusColor = Color(0xFFFF3B30),
-            description = "Protected by Widevine L1 and FLAG_SECURE. Android HAL strictly zeros audio capture buffers for copyright protection."
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        AppCompatibilityRow(
-            appName = "VoIP & Phone Calls (WhatsApp, Zoom, Cellular)",
-            status = "UNSUPPORTED (BY DESIGN)",
-            statusColor = Color(0xFFFF3B30),
-            description = "USAGE_VOICE_COMMUNICATION is barred from AudioPlaybackCapture by Android privacy rules to prevent call recording."
-        )
-
-        Spacer(modifier = Modifier.height(22.dp))
-
-        // 4. Auracast Technical Clarification Card
-        Text(
-            text = "BLUETOOTH AURACAST ARCHITECTURAL BOUNDARY",
-            style = WePlayTheme.typography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 1.sp),
-            color = Color(0xFF777D86)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Box(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(8.dp))
-                .background(Color(0xFF141922))
-                .border(1.dp, Color(0xFF222B38), RoundedCornerShape(8.dp))
-                .padding(14.dp)
+                .fillMaxSize()
+                .statusBarsPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 22.dp, vertical = 14.dp)
+                .padding(bottom = 36.dp)
         ) {
-            Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Hardware Probe vs System API",
-                        style = WePlayTheme.typography.titleMedium.copy(fontSize = 13.sp),
-                        color = Color(0xFFF1F5F9)
-                    )
-                    Text(
-                        text = "OEM PRIVILEGED",
-                        style = WePlayTheme.typography.tabularMetric.copy(fontSize = 9.sp),
-                        color = Color(0xFFFF9500)
-                    )
-                }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "isLeAudioBroadcastSourceSupported() verifies physical radio capability. However, creating an Auracast broadcast requires @SystemApi MANAGE_BLUETOOTH_LE_BROADCAST_SOURCE, restricted to platform-signed system apps. WePlay directs supported phones to native system Bluetooth Audio Sharing and utilizes low-latency Wi-Fi transport (WADP v1.0) for universal multi-phone sync.",
-                    style = WePlayTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 16.sp),
-                    color = Color(0xFF94A3B8)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(22.dp))
-
-        // 5. Diagnostics Quick Access
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(8.dp))
-                .background(Color(0xFF141922))
-                .border(1.dp, Color(0xFF00E5C8), RoundedCornerShape(8.dp))
-                .clickable { onOpenDiagnostics() }
-                .padding(14.dp)
-        ) {
+            // 1. Top Bar: "Settings" & Search Icon
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(
-                        text = "Technical Diagnostics & Telemetry",
-                        style = WePlayTheme.typography.titleMedium.copy(fontSize = 13.sp),
-                        color = Color(0xFFF1F5F9)
-                    )
-                    Text(
-                        text = "Inspect true jitter, sequence gaps, packet loss, and round-trip times",
-                        style = WePlayTheme.typography.bodySmall.copy(fontSize = 10.sp),
-                        color = Color(0xFF777D86)
-                    )
-                }
                 Text(
-                    text = "VIEW ›",
-                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                    color = Color(0xFF00E5C8)
+                    text = "Settings",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = WePlayTextPrimary
+                )
+
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Search Settings",
+                    tint = WePlayTextPrimary,
+                    modifier = Modifier.size(24.dp)
                 )
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
-    }
-}
+            Spacer(modifier = Modifier.height(20.dp))
 
-@Composable
-fun PermissionStatusCard(
-    title: String,
-    subtitle: String,
-    isGranted: Boolean
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(6.dp))
-            .background(Color(0xFF141922))
-            .border(1.dp, Color(0xFF222B38), RoundedCornerShape(6.dp))
-            .padding(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+            // 2. User Profile Card ("Nova User" / "nova@weplay.app")
             Box(
                 modifier = Modifier
-                    .size(24.dp)
-                    .clip(CircleShape)
-                    .background(if (isGranted) Color(0xFF00E5C8).copy(alpha = 0.15f) else Color(0xFFFF3B30).copy(alpha = 0.15f)),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(WePlaySurface)
+                    .border(1.dp, WePlayBorder, RoundedCornerShape(16.dp))
+                    .padding(16.dp)
             ) {
-                Text(
-                    text = if (isGranted) "✓" else "✕",
-                    style = WePlayTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                    color = if (isGranted) Color(0xFF00E5C8) else Color(0xFFFF3B30)
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Cosmic Avatar Glyph
+                        Box(
+                            modifier = Modifier
+                                .size(46.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    Brush.linearGradient(
+                                        listOf(Color(0xFF8B5CF6), Color(0xFFFF6B00))
+                                    )
+                                )
+                                .border(1.5.dp, WePlayOrangeGlow.copy(alpha = 0.7f), CircleShape)
+                        )
+
+                        Spacer(modifier = Modifier.width(14.dp))
+
+                        Column {
+                            Text(
+                                text = "Nova User",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = WePlayTextPrimary
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "nova@weplay.app",
+                                fontSize = 12.sp,
+                                color = WePlayTextSecondary
+                            )
+                        }
+                    }
+
+                    WePlayIcon(
+                        type = WePlayIconType.CHEVRON_RIGHT,
+                        tint = WePlayTextMuted,
+                        size = 18.dp
+                    )
+                }
             }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = WePlayTheme.typography.titleMedium.copy(fontSize = 13.sp),
-                    color = Color(0xFFF1F5F9)
-                )
-                Spacer(modifier = Modifier.height(1.dp))
-                Text(
-                    text = subtitle,
-                    style = WePlayTheme.typography.bodySmall.copy(fontSize = 10.sp),
-                    color = Color(0xFF777D86)
-                )
+
+            Spacer(modifier = Modifier.height(26.dp))
+
+            // 3. Section: "Audio Settings"
+            Text(
+                text = "Audio Settings",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = WePlayTextSecondary,
+                letterSpacing = 0.5.sp
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(WePlaySurface)
+                    .border(1.dp, WePlayBorder, RoundedCornerShape(16.dp))
+            ) {
+                Column {
+                    SettingsRowItem(
+                        iconType = WePlayIconType.ROUTE,
+                        title = "Output Routing",
+                        value = null,
+                        onClick = onOpenDiagnostics,
+                        showDivider = true
+                    )
+                    SettingsRowItem(
+                        iconType = WePlayIconType.SPEED,
+                        title = "Latency Optimization",
+                        value = "Auto",
+                        onClick = onOpenDiagnostics,
+                        showDivider = true
+                    )
+                    SettingsRowItem(
+                        iconType = WePlayIconType.HI_RES,
+                        title = "Audio Quality",
+                        value = "Hi-Res",
+                        onClick = onOpenDiagnostics,
+                        showDivider = false
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(26.dp))
+
+            // 4. Section: "General"
+            Text(
+                text = "General",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = WePlayTextSecondary,
+                letterSpacing = 0.5.sp
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(WePlaySurface)
+                    .border(1.dp, WePlayBorder, RoundedCornerShape(16.dp))
+            ) {
+                Column {
+                    SettingsRowItem(
+                        iconType = WePlayIconType.DISCOVERY_RADAR,
+                        title = "Appearance",
+                        value = "System",
+                        onClick = { },
+                        showDivider = true
+                    )
+                    SettingsRowSimple(
+                        icon = Icons.Default.Notifications,
+                        title = "Notifications",
+                        value = null,
+                        onClick = { },
+                        showDivider = true
+                    )
+                    SettingsRowSimple(
+                        icon = Icons.Default.Info,
+                        title = "About WePlay",
+                        value = null,
+                        onClick = onOpenDiagnostics,
+                        showDivider = false
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-fun AppCompatibilityRow(
-    appName: String,
-    status: String,
-    statusColor: Color,
-    description: String
+private fun SettingsRowItem(
+    iconType: WePlayIconType,
+    title: String,
+    value: String?,
+    onClick: () -> Unit,
+    showDivider: Boolean
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(6.dp))
-            .background(Color(0xFF141922))
-            .border(1.dp, Color(0xFF222B38), RoundedCornerShape(6.dp))
-            .padding(12.dp)
+            .clickable { onClick() }
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = appName,
-                style = WePlayTheme.typography.titleMedium.copy(fontSize = 13.sp),
-                color = Color(0xFFF1F5F9)
-            )
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(statusColor.copy(alpha = 0.15f))
-                    .border(1.dp, statusColor.copy(alpha = 0.4f), RoundedCornerShape(3.dp))
-                    .padding(horizontal = 6.dp, vertical = 2.dp)
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                WePlayIcon(
+                    type = iconType,
+                    tint = WePlayTextSecondary,
+                    size = 20.dp
+                )
+                Spacer(modifier = Modifier.width(14.dp))
                 Text(
-                    text = status,
-                    style = WePlayTheme.typography.tabularMetric.copy(fontSize = 8.sp),
-                    color = statusColor
+                    text = title,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = WePlayTextPrimary
+                )
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (value != null) {
+                    Text(
+                        text = value,
+                        fontSize = 13.sp,
+                        color = WePlayTextSecondary
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
+                WePlayIcon(
+                    type = WePlayIconType.CHEVRON_RIGHT,
+                    tint = WePlayTextMuted,
+                    size = 16.dp
                 )
             }
         }
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = description,
-            style = WePlayTheme.typography.bodySmall.copy(fontSize = 10.sp, lineHeight = 15.sp),
-            color = Color(0xFF777D86)
-        )
+
+        if (showDivider) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .padding(horizontal = 16.dp)
+                    .background(WePlayBorderSubtle)
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsRowSimple(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    value: String?,
+    onClick: () -> Unit,
+    showDivider: Boolean
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = WePlayTextSecondary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(14.dp))
+                Text(
+                    text = title,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = WePlayTextPrimary
+                )
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (value != null) {
+                    Text(
+                        text = value,
+                        fontSize = 13.sp,
+                        color = WePlayTextSecondary
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
+                WePlayIcon(
+                    type = WePlayIconType.CHEVRON_RIGHT,
+                    tint = WePlayTextMuted,
+                    size = 16.dp
+                )
+            }
+        }
+
+        if (showDivider) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .padding(horizontal = 16.dp)
+                    .background(WePlayBorderSubtle)
+            )
+        }
     }
 }
