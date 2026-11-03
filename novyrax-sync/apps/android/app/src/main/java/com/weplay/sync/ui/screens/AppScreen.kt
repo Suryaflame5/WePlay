@@ -8,5 +8,13 @@ enum class AppScreen {
     JOIN_SESSION,
     OUTPUT_MANAGEMENT,
     DIAGNOSTICS,
-    SETTINGS
+    SETTINGS,
+    MUSIC_HOME,
+    NOW_PLAYING,
+    DEVICE_DISCOVERY,
+    MULTI_OUTPUT_ROOM,
+    LIBRARY
 }
+
+
+

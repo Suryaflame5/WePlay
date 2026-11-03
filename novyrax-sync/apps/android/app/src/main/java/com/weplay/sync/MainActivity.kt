@@ -35,6 +35,7 @@ import com.weplay.sync.shared.model.CaptureSourceType
 import com.weplay.sync.shared.model.CaptureStatus
 import com.weplay.sync.shared.model.ConnectedListener
 import com.weplay.sync.shared.model.ConnectionStatus
+import com.weplay.sync.shared.model.DeviceGroup
 import com.weplay.sync.shared.model.DeviceType
 import com.weplay.sync.shared.model.NearbyStream
 import com.weplay.sync.shared.model.SharingTransport
@@ -44,15 +45,22 @@ import com.weplay.sync.sync.SyncCoordinator
 import com.weplay.sync.ui.screens.AppScreen
 import com.weplay.sync.ui.screens.AudioSyncSettingsScreen
 import com.weplay.sync.ui.screens.DeviceDiscoveryScreen
+import com.weplay.sync.ui.screens.HomeScreen
 import com.weplay.sync.ui.screens.JoinSessionScreen
+import com.weplay.sync.ui.screens.LibraryAndGroupsScreen
+import com.weplay.sync.ui.screens.LibraryTrackItem
 import com.weplay.sync.ui.screens.LiveSessionHostScreen
+import com.weplay.sync.ui.screens.MultiOutputRoomScreen
+import com.weplay.sync.ui.screens.NowPlayingScreen
 import com.weplay.sync.ui.screens.OnboardingScreen
 import com.weplay.sync.ui.screens.OutputManagementScreen
+import com.weplay.sync.ui.screens.PlayerTrackState
 import com.weplay.sync.ui.screens.SettingsCompatibilityScreen
 import com.weplay.sync.ui.screens.ShareHomeScreen
 import com.weplay.sync.ui.screens.SyncDiagnostics
 import com.weplay.sync.ui.screens.WePlaySplashScreen
 import com.weplay.sync.ui.theme.WePlayTheme
+import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class MainActivity : ComponentActivity() {
@@ -67,6 +75,7 @@ class MainActivity : ComponentActivity() {
     private var audioShareService: AudioShareService? = null
     private var isServiceBound = false
     private val serviceSessionFlow = MutableStateFlow<AudioSharingSession?>(null)
+    private val requestedScreenFlow = MutableStateFlow<AppScreen?>(null)
 
     // User callback after projection permission granted
     private var onProjectionApproved: (() -> Unit)? = null
@@ -97,9 +106,24 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleScreenIntent(intent)
+    }
+
+    private fun handleScreenIntent(intent: Intent?) {
+        intent?.getStringExtra("screen")?.let { name ->
+            runCatching { AppScreen.valueOf(name.uppercase()) }.getOrNull()?.let {
+                requestedScreenFlow.value = it
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+        handleScreenIntent(intent)
 
         // Initialize core engines
         playbackEngine = AudioPlaybackEngine(this)
@@ -130,6 +154,7 @@ class MainActivity : ComponentActivity() {
                     groupManager = groupManager,
                     receiverEngine = receiverEngine,
                     liveHostSession = liveSessionState,
+                    requestedScreenFlow = requestedScreenFlow,
                     onRequestMediaProjection = { onApproved ->
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                             onProjectionApproved = onApproved
@@ -168,14 +193,22 @@ fun WePlayRootNavigator(
     groupManager: DeviceGroupManager,
     receiverEngine: AudioReceiverEngine,
     liveHostSession: AudioSharingSession?,
+    requestedScreenFlow: MutableStateFlow<AppScreen?>,
     onRequestMediaProjection: (onApproved: () -> Unit) -> Unit,
     onToggleMute: () -> Unit,
     onStopSharing: () -> Unit,
     onRemoveListener: (String) -> Unit
 ) {
-    var currentScreen by remember { mutableStateOf<AppScreen>(AppScreen.SPLASH) }
+    val requestedByIntent by requestedScreenFlow.collectAsState()
+    var currentScreen by remember { mutableStateOf<AppScreen>(requestedByIntent ?: AppScreen.SPLASH) }
     var previousScreen by remember { mutableStateOf<AppScreen>(AppScreen.SHARE_HOME) }
     var hasCompletedOnboarding by remember { mutableStateOf(false) }
+
+    LaunchedEffect(requestedByIntent) {
+        requestedByIntent?.let {
+            currentScreen = it
+        }
+    }
 
     // Use live session from bound service, fallback to clean local state
     val activeSession = liveHostSession ?: AudioSharingSession(
@@ -213,6 +246,15 @@ fun WePlayRootNavigator(
                     status = ConnectionStatus.AUDIO_READY,
                     volume = 0.8f,
                     isSelectedForPlayback = true
+                ),
+                AudioOutputDevice(
+                    id = "dev_sony_xm5",
+                    name = "Sony WH-1000XM5",
+                    type = DeviceType.HEADPHONES,
+                    transport = TransportType.BLUETOOTH_A2DP,
+                    status = ConnectionStatus.PLAYING,
+                    volume = 0.85f,
+                    isSelectedForPlayback = true
                 )
             )
         )
@@ -220,6 +262,23 @@ fun WePlayRootNavigator(
 
     var masterVolume by remember { mutableFloatStateOf(0.75f) }
     var isMasterMuted by remember { mutableStateOf(false) }
+
+    // Track state for Now Playing and Music Home screens
+    var trackState by remember {
+        mutableStateOf(
+            PlayerTrackState(
+                title = "Unsayable",
+                artist = "Brambles",
+                album = "Charcoal",
+                durationMs = 172000L,
+                currentPositionMs = 64000L,
+                isPlaying = true,
+                format = "FLAC",
+                sampleRate = 96000,
+                bitDepth = 24
+            )
+        )
+    }
 
     when (currentScreen) {
         AppScreen.SPLASH -> {
@@ -374,6 +433,109 @@ fun WePlayRootNavigator(
                     currentScreen = AppScreen.DIAGNOSTICS
                 },
                 onBack = { currentScreen = AppScreen.SHARE_HOME }
+            )
+        }
+
+        AppScreen.MUSIC_HOME -> {
+            HomeScreen(
+                trackState = trackState,
+                activeDevices = devices,
+                isPlaying = trackState.isPlaying,
+                onTrackSelect = { title, artist, album ->
+                    trackState = trackState.copy(title = title, artist = artist, album = album)
+                },
+                onPlayPauseToggle = {
+                    trackState = trackState.copy(isPlaying = !trackState.isPlaying)
+                },
+                onOpenPlayer = { currentScreen = AppScreen.NOW_PLAYING },
+                onOpenAudioRoom = { currentScreen = AppScreen.MULTI_OUTPUT_ROOM },
+                onOpenLibrary = { currentScreen = AppScreen.LIBRARY },
+                onOpenSettings = { currentScreen = AppScreen.SETTINGS }
+            )
+        }
+
+        AppScreen.NOW_PLAYING -> {
+            NowPlayingScreen(
+                trackState = trackState,
+                activeDevices = devices,
+                onPlayPauseToggle = {
+                    trackState = trackState.copy(isPlaying = !trackState.isPlaying)
+                },
+                onSeek = { trackState = trackState.copy(currentPositionMs = it) },
+                onNextTrack = { },
+                onPreviousTrack = { },
+                onOpenOutputSelector = { currentScreen = AppScreen.OUTPUT_MANAGEMENT },
+                onOpenQueue = { currentScreen = AppScreen.LIBRARY },
+                onBack = { currentScreen = previousScreen }
+            )
+        }
+
+        AppScreen.DEVICE_DISCOVERY -> {
+            var isScanning by remember { mutableStateOf(true) }
+            DeviceDiscoveryScreen(
+                devices = devices,
+                isScanning = isScanning,
+                onStartScan = { isScanning = true },
+                onStopScan = { isScanning = false },
+                onToggleSelect = { id ->
+                    devices = devices.map { if (it.id == id) it.copy(isSelectedForPlayback = !it.isSelectedForPlayback) else it }
+                },
+                onVolumeChange = { id, v ->
+                    devices = devices.map { if (it.id == id) it.copy(volume = v) else it }
+                },
+                onBack = { currentScreen = previousScreen }
+            )
+        }
+
+        AppScreen.MULTI_OUTPUT_ROOM -> {
+            MultiOutputRoomScreen(
+                activeOutputs = devices,
+                masterVolume = masterVolume,
+                isMasterMuted = isMasterMuted,
+                onMasterVolumeChange = { masterVolume = it },
+                onMasterMuteToggle = { isMasterMuted = !isMasterMuted },
+                onDeviceVolumeChange = { id, v ->
+                    devices = devices.map { if (it.id == id) it.copy(volume = v) else it }
+                },
+                onToggleDevice = { id ->
+                    devices = devices.map { if (it.id == id) it.copy(isSelectedForPlayback = !it.isSelectedForPlayback) else it }
+                },
+                onAddDeviceClick = { currentScreen = AppScreen.DEVICE_DISCOVERY },
+                onClose = { currentScreen = previousScreen }
+            )
+        }
+
+        AppScreen.LIBRARY -> {
+            val libraryTracks = remember {
+                listOf(
+                    LibraryTrackItem("1", "To Speak Of Solitude", "Brambles", "Charcoal", "4:21", "FLAC 24-bit / 96k"),
+                    LibraryTrackItem("2", "Unsayable", "Brambles", "Charcoal", "2:52", "FLAC 24-bit / 96k"),
+                    LibraryTrackItem("3", "In The Androgynous Dark", "Brambles", "Charcoal", "4:43", "FLAC 24-bit / 96k"),
+                    LibraryTrackItem("4", "Salt Photographs", "Brambles", "Charcoal", "6:54", "FLAC 24-bit / 96k"),
+                    LibraryTrackItem("5", "Pink And Golden Billows", "Brambles", "Charcoal", "2:58", "FLAC 24-bit / 96k")
+                )
+            }
+            val groups = remember {
+                listOf(
+                    DeviceGroup(
+                        id = "grp_all",
+                        name = "Whole House Audio",
+                        deviceIds = listOf("dev_default_speaker", "dev_sony_xm5"),
+                        masterVolume = 0.8f,
+                        isMuted = false
+                    )
+                )
+            }
+            LibraryAndGroupsScreen(
+                libraryTracks = libraryTracks,
+                savedGroups = groups,
+                onTrackSelect = { item ->
+                    trackState = trackState.copy(title = item.title, artist = item.artist, album = item.album)
+                    currentScreen = AppScreen.NOW_PLAYING
+                },
+                onApplyGroup = { },
+                onSaveCurrentGroup = { },
+                onBack = { currentScreen = previousScreen }
             )
         }
     }
