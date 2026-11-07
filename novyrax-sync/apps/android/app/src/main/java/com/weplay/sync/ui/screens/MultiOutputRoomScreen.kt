@@ -514,7 +514,7 @@ private fun RoomControlCard(
  * Precision glowing horizontal slider.
  */
 @Composable
-private fun GlowHorizontalSlider(
+fun GlowHorizontalSlider(
     value: Float,
     onValueChange: (Float) -> Unit,
     modifier: Modifier = Modifier

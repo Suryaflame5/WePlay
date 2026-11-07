@@ -93,7 +93,7 @@ fun OnboardingScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "A Shared Soundscape\nAcross Every Device",
+                    text = "Share Music with Two Headphones\nListen together with friends wirelessly",
                     fontSize = 15.sp,
                     lineHeight = 22.sp,
                     fontWeight = FontWeight.Normal,
@@ -104,7 +104,7 @@ fun OnboardingScreen(
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            // 3. Primary Action Button: "Enter Soundscape →" (Signature Electric Teal Pill)
+            // 3. Primary Action Button: "Start Listening →" (Signature Electric Teal Pill)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -129,7 +129,7 @@ fun OnboardingScreen(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "Enter Soundscape",
+                        text = "Start Listening",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,

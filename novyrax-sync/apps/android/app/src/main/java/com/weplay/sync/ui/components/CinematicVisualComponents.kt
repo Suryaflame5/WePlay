@@ -1231,8 +1231,8 @@ fun WePlayBottomNav(
         ) {
             val tabs = listOf(
                 Pair(AppScreen.SHARE_HOME, "Home"),
-                Pair(AppScreen.LIBRARY, "Library"),
-                Pair(AppScreen.MULTI_OUTPUT_ROOM, "Rooms"),
+                Pair(AppScreen.LIBRARY, "Music"),
+                Pair(AppScreen.MULTI_OUTPUT_ROOM, "Devices"),
                 Pair(AppScreen.SETTINGS, "Settings")
             )
 

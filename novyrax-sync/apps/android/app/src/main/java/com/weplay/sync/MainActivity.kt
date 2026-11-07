@@ -338,6 +338,39 @@ fun WePlayRootNavigator(
         AppScreen.SHARE_HOME -> {
             ShareHomeScreen(
                 activeSession = activeSession,
+                trackState = trackState,
+                isPlaying = isEnginePlaying,
+                devices = devices,
+                masterVolume = masterVolume,
+                onMasterVolumeChange = { v ->
+                    masterVolume = v
+                    routeManager.setSystemVolumeFraction(v)
+                },
+                onDeviceVolumeChange = { id, vol ->
+                    devices = devices.map { if (it.id == id) it.copy(volume = vol) else it }
+                },
+                onToggleDevice = { id ->
+                    devices = devices.map {
+                        if (it.id == id) {
+                            it.copy(isSelectedForPlayback = !it.isSelectedForPlayback)
+                        } else it
+                    }
+                },
+                onPlayPauseToggle = {
+                    if (isEnginePlaying) {
+                        playbackEngine.pause()
+                    } else {
+                        playbackEngine.play()
+                    }
+                },
+                onTrackSelect = { title, artist, album ->
+                    trackState = trackState.copy(title = title, artist = artist, album = album)
+                    playbackEngine.play()
+                },
+                onOpenNowPlaying = {
+                    previousScreen = AppScreen.SHARE_HOME
+                    currentScreen = AppScreen.NOW_PLAYING
+                },
                 onStartSession = {
                     onRequestMediaProjection {
                         previousScreen = AppScreen.SHARE_HOME
@@ -358,7 +391,7 @@ fun WePlayRootNavigator(
                 },
                 onOpenDevices = {
                     previousScreen = AppScreen.SHARE_HOME
-                    currentScreen = AppScreen.OUTPUT_MANAGEMENT
+                    currentScreen = AppScreen.DEVICE_DISCOVERY
                 },
                 onOpenSettings = {
                     previousScreen = AppScreen.SHARE_HOME
@@ -367,7 +400,8 @@ fun WePlayRootNavigator(
                 onOpenLiveSession = {
                     previousScreen = AppScreen.SHARE_HOME
                     currentScreen = AppScreen.HOST_SESSION
-                }
+                },
+                onOpenBluetoothSettings = onOpenBluetoothSettings
             )
         }
 
