@@ -1,40 +1,79 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="48dp"
-    android:height="48dp"
-    android:viewportWidth="48"
-    android:viewportHeight="48">
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
 
-    <!-- Orbit Path -->
+    <!-- Premium Dark Obsidian App Icon Container -->
+    <path
+        android:fillColor="#0D1117"
+        android:strokeColor="#1E2A36"
+        android:strokeWidth="1.5"
+        android:pathData="M 32,14 L 76,14 A 18,18 0 0 1 94,32 L 94,76 A 18,18 0 0 1 76,94 L 32,94 A 18,18 0 0 1 14,76 L 14,32 A 18,18 0 0 1 32,14 Z" />
+
+    <!-- Ambient Teal Glow behind mark -->
+    <path
+        android:pathData="M 54,54 m -24,0 a 24,24 0 1,1 48,0 a 24,24 0 1,1 -48,0">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:centerX="54"
+                android:centerY="54"
+                android:gradientRadius="24"
+                android:type="radial">
+                <item android:color="#2621CDB8" android:offset="0.0" />
+                <item android:color="#00000000" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Pillar 1 (Left Outer): Height 22dp, Center X: 39.25, Width: 5.5dp -->
     <path
         android:strokeColor="#21CDB8"
-        android:strokeWidth="1.6"
+        android:strokeWidth="5.5"
         android:strokeLineCap="round"
-        android:pathData="M 6.8,28.2 C 4.5,23.5 12.0,17.2 23.5,14.1 C 35.0,11.0 46.0,12.3 48.0,17.0 C 50.0,21.7 42.5,28.0 31.0,31.1 C 19.5,34.2 9.0,32.9 6.8,28.2 Z" />
+        android:pathData="M 39.25,45.75 L 39.25,62.25" />
 
-    <!-- Output Node 1 -->
+    <!-- Pillar 2 (Inner Left): Height 40dp, Center X: 48.75, Width: 5.5dp -->
     <path
-        android:fillColor="#21CDB8"
-        android:pathData="M 37.5,14.5 A 2.2,2.2 0 1,1 37.5,18.9 A 2.2,2.2 0 1,1 37.5,14.5" />
+        android:strokeWidth="5.5"
+        android:strokeLineCap="round"
+        android:pathData="M 48.75,36.75 L 48.75,71.25">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="48.75"
+                android:startY="36.75"
+                android:endX="48.75"
+                android:endY="71.25"
+                android:type="linear">
+                <item android:color="#5CE1D2" android:offset="0.0" />
+                <item android:color="#21CDB8" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
 
-    <!-- Output Node 2 -->
+    <!-- Pillar 3 (Inner Right): Height 40dp, Center X: 58.25, Width: 5.5dp -->
     <path
-        android:fillColor="#21CDB8"
-        android:pathData="M 43.5,22.0 A 2.2,2.2 0 1,1 43.5,26.4 A 2.2,2.2 0 1,1 43.5,22.0" />
+        android:strokeWidth="5.5"
+        android:strokeLineCap="round"
+        android:pathData="M 58.25,36.75 L 58.25,71.25">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="58.25"
+                android:startY="36.75"
+                android:endX="58.25"
+                android:endY="71.25"
+                android:type="linear">
+                <item android:color="#5CE1D2" android:offset="0.0" />
+                <item android:color="#21CDB8" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
 
-    <!-- Output Node 3 -->
-    <path
-        android:fillColor="#21CDB8"
-        android:pathData="M 8.5,26.0 A 2.2,2.2 0 1,1 8.5,30.4 A 2.2,2.2 0 1,1 8.5,26.0" />
-
-    <!-- Center Play Gesture (Dark mode off-white) -->
-    <path
-        android:fillColor="#ECEEEA"
-        android:pathData="M 17.0,13.5 C 17.0,12.3 18.3,11.5 19.4,12.2 L 35.2,22.7 C 36.1,23.3 36.1,24.7 35.2,25.3 L 19.4,35.8 C 18.3,36.5 17.0,35.7 17.0,34.5 Z" />
-
-    <!-- 5 Balanced Hi-Fi Waveform Bars -->
+    <!-- Pillar 4 (Right Outer): Height 22dp, Center X: 67.75, Width: 5.5dp -->
     <path
         android:strokeColor="#21CDB8"
-        android:strokeWidth="1.8"
+        android:strokeWidth="5.5"
         android:strokeLineCap="round"
-        android:pathData="M 21.0,21.5 L 21.0,26.5 M 24.0,18.5 L 24.0,29.5 M 27.0,16.0 L 27.0,32.0 M 30.0,18.5 L 30.0,29.5 M 33.0,21.5 L 33.0,26.5" />
+        android:pathData="M 67.75,45.75 L 67.75,62.25" />
 </vector>

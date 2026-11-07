@@ -246,6 +246,63 @@ fun SettingsCompatibilityScreen(
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(36.dp))
+
+            // Studio Hardware Signature & Novyrax Engine Badge
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "WePlay Studio • v2.4.0 (Build 240)",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = WePlayTextMuted,
+                    letterSpacing = 0.5.sp
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    NovyraxMarkGlyph(
+                        size = 14.dp,
+                        tint = Color(0xFF21CDB8)
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(
+                        text = "POWERED BY ",
+                        color = Color(0xFF5E6F80),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 1.4.sp
+                    )
+
+                    Text(
+                        text = "NOVYRAX",
+                        color = Color(0xFF21CDB8),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.8.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = "High-Fidelity Dual Bluetooth Audio Engine",
+                    color = Color(0xFF435160),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Normal,
+                    letterSpacing = 0.4.sp
+                )
+            }
         }
 
         // Docked Bottom Navigation Bar

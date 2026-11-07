@@ -1,0 +1,73 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="160dp"
+    android:height="160dp"
+    android:viewportWidth="160"
+    android:viewportHeight="160">
+
+    <!-- Ambient Glow Corona (Safe inside the Android 12 circular splash mask) -->
+    <path
+        android:pathData="M 80,80 m -40,0 a 40,40 0 1,1 80,0 a 40,40 0 1,1 -80,0">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:centerX="80"
+                android:centerY="80"
+                android:gradientRadius="40"
+                android:type="radial">
+                <item android:color="#2621CDB8" android:offset="0.0" />
+                <item android:color="#0D21CDB8" android:offset="0.6" />
+                <item android:color="#00000000" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Pillar 1 (Left Outer): Height 34dp (y: 63 to 97), Center X: 57.5, Width: 8.5dp -->
+    <path
+        android:strokeColor="#21CDB8"
+        android:strokeWidth="8.5"
+        android:strokeLineCap="round"
+        android:pathData="M 57.5,67.25 L 57.5,92.75" />
+
+    <!-- Pillar 2 (Inner Left): Height 62dp (y: 49 to 111), Center X: 72.5, Width: 8.5dp -->
+    <path
+        android:strokeWidth="8.5"
+        android:strokeLineCap="round"
+        android:pathData="M 72.5,53.25 L 72.5,106.75">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="72.5"
+                android:startY="53.25"
+                android:endX="72.5"
+                android:endY="106.75"
+                android:type="linear">
+                <item android:color="#5CE1D2" android:offset="0.0" />
+                <item android:color="#21CDB8" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Pillar 3 (Inner Right): Height 62dp (y: 49 to 111), Center X: 87.5, Width: 8.5dp -->
+    <path
+        android:strokeWidth="8.5"
+        android:strokeLineCap="round"
+        android:pathData="M 87.5,53.25 L 87.5,106.75">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="87.5"
+                android:startY="53.25"
+                android:endX="87.5"
+                android:endY="106.75"
+                android:type="linear">
+                <item android:color="#5CE1D2" android:offset="0.0" />
+                <item android:color="#21CDB8" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Pillar 4 (Right Outer): Height 34dp (y: 63 to 97), Center X: 102.5, Width: 8.5dp -->
+    <path
+        android:strokeColor="#21CDB8"
+        android:strokeWidth="8.5"
+        android:strokeLineCap="round"
+        android:pathData="M 102.5,67.25 L 102.5,92.75" />
+</vector>
