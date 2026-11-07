@@ -12,20 +12,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.weplay.sync.ui.theme.WePlayOrangeGlow
-import com.weplay.sync.ui.theme.WePlayOrangePrimary
+import com.weplay.sync.ui.theme.WePlayTealGlow
+import com.weplay.sync.ui.theme.WePlayTealPrimary
 
 /**
  * WePlay Master 4-Pillar Glowing Sound Mark.
- * The primary brand glyph seen across Splash, Home, and Multi-Room screens in the design reference.
- * 4 rounded vertical pillars with amber-to-orange molten gradient and soft corona glow.
+ * The primary brand glyph matching the app icon identity (#21CDB8).
+ * 4 rounded vertical pillars with vibrant electric teal-to-cyan gradient and soft corona glow.
  */
 @Composable
 fun WePlayMark(
     modifier: Modifier = Modifier,
     size: Dp = 32.dp,
-    tintPrimary: Color = WePlayOrangeGlow,
-    tintSecondary: Color = WePlayOrangePrimary,
+    tintPrimary: Color = WePlayTealGlow,
+    tintSecondary: Color = WePlayTealPrimary,
     glowAlpha: Float = 0.45f,
     waveformProgress: Float = 1.0f,
     playProgress: Float = 1.0f,

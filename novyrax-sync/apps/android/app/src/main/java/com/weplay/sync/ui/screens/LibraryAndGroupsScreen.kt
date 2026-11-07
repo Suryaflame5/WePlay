@@ -56,6 +56,8 @@ import com.weplay.sync.ui.theme.WePlayOrangeGlow
 import com.weplay.sync.ui.theme.WePlayOrangePrimary
 import com.weplay.sync.ui.theme.WePlaySurface
 import com.weplay.sync.ui.theme.WePlaySurfaceElevated
+import com.weplay.sync.ui.theme.WePlayTealGlow
+import com.weplay.sync.ui.theme.WePlayTealPrimary
 import com.weplay.sync.ui.theme.WePlayTextMuted
 import com.weplay.sync.ui.theme.WePlayTextPrimary
 import com.weplay.sync.ui.theme.WePlayTextSecondary
@@ -91,6 +93,7 @@ fun LibraryAndGroupsScreen(
     onApplyGroup: (DeviceGroup) -> Unit,
     onSaveCurrentGroup: () -> Unit,
     onBack: () -> Unit,
+    onNavigateToTab: (AppScreen) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -347,7 +350,7 @@ fun LibraryAndGroupsScreen(
             // Bottom Nav with Library active
             WePlayBottomNav(
                 currentTab = AppScreen.LIBRARY,
-                onTabSelect = { /* navigate */ }
+                onTabSelect = onNavigateToTab
             )
         }
     }
@@ -372,19 +375,19 @@ private fun LibraryCard3D(
             .border(1.dp, WePlayBorder, RoundedCornerShape(16.dp))
             .clickable { onClick() }
     ) {
-        // Procedural Artwork on Top Half
+        // Studio Soundscape Artwork on Top Half
         Canvas(modifier = Modifier.fillMaxSize()) {
             val w = this.size.width
             val h = this.size.height
 
             val gradientColors = when (theme) {
-                "ambient" -> listOf(Color(0xFF0C1E3A), Color(0xFF1E40AF), Color(0xFF38BDF8))
-                "focus" -> listOf(Color(0xFF2E1065), Color(0xFF7E22CE), Color(0xFFEC4899))
-                "chill" -> listOf(Color(0xFF064E3B), Color(0xFF0D9488), Color(0xFF2DD4BF))
-                else -> listOf(Color(0xFF4C0519), Color(0xFF9F1239), Color(0xFFFB7185))
+                "ambient" -> listOf(Color(0xFF071424), Color(0xFF0F3048), Color(0xFF1B6A78), Color(0xFF21CDB8))
+                "focus" -> listOf(Color(0xFF140D26), Color(0xFF2E1A4D), Color(0xFF6B21A8), Color(0xFF3DE8D2))
+                "chill" -> listOf(Color(0xFF061A16), Color(0xFF0B3830), Color(0xFF107A6D), Color(0xFF21CDB8))
+                else -> listOf(Color(0xFF1F0D16), Color(0xFF4C1D2E), Color(0xFF9F1239), Color(0xFF3DE8D2))
             }
 
-            // Background art gradient
+            // Background Art Gradient
             drawRoundRect(
                 brush = Brush.verticalGradient(
                     colors = gradientColors,
@@ -396,44 +399,72 @@ private fun LibraryCard3D(
                 cornerRadius = CornerRadius(16.dp.toPx(), 16.dp.toPx())
             )
 
-            // Dynamic 3D shapes inside artwork
+            // Dynamic Acoustic Waveforms & Generative Resonance Curves
             when (theme) {
                 "ambient" -> {
-                    // Soft blue mountain peaks
-                    val path = androidx.compose.ui.graphics.Path().apply {
-                        moveTo(0f, h * 0.65f)
-                        lineTo(w * 0.3f, h * 0.35f)
-                        lineTo(w * 0.6f, h * 0.55f)
-                        lineTo(w, h * 0.25f)
-                        lineTo(w, h * 0.65f)
-                        close()
+                    // Fluid harmonic acoustic splines
+                    val p = androidx.compose.ui.graphics.Path().apply {
+                        moveTo(0f, h * 0.50f)
+                        cubicTo(w * 0.35f, h * 0.20f, w * 0.65f, h * 0.55f, w, h * 0.32f)
                     }
-                    drawPath(path, Color(0xFF0F172A).copy(alpha = 0.5f))
+                    drawPath(
+                        path = p,
+                        brush = Brush.horizontalGradient(listOf(Color(0xFF38BDF8), Color(0xFF21CDB8))),
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                    )
+                    // Floating acoustic particles
+                    drawCircle(Color.White.copy(alpha = 0.8f), radius = 2.dp.toPx(), center = Offset(w * 0.35f, h * 0.20f))
+                    drawCircle(Color.White.copy(alpha = 0.6f), radius = 1.5.dp.toPx(), center = Offset(w * 0.75f, h * 0.40f))
                 }
                 "focus" -> {
-                    // Iridescent sphere
+                    // Concentric Orbital Acoustic Core
+                    val coreCenter = Offset(w * 0.5f, h * 0.32f)
                     drawCircle(
-                        color = Color(0xFFF472B6).copy(alpha = 0.6f),
-                        radius = w * 0.25f,
-                        center = Offset(w * 0.5f, h * 0.32f)
+                        brush = Brush.radialGradient(
+                            listOf(Color(0xFFE8FFFB), Color(0xFF3DE8D2), Color(0xFF7E22CE), Color.Transparent),
+                            center = coreCenter,
+                            radius = w * 0.26f
+                        ),
+                        radius = w * 0.26f,
+                        center = coreCenter
+                    )
+                    drawCircle(
+                        color = Color.White.copy(alpha = 0.4f),
+                        radius = w * 0.18f,
+                        center = coreCenter,
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.dp.toPx())
                     )
                 }
                 "chill" -> {
-                    // Moon & wave
-                    drawCircle(
-                        color = Color(0xFFA7F3D0).copy(alpha = 0.7f),
-                        radius = w * 0.18f,
-                        center = Offset(w * 0.65f, h * 0.25f)
-                    )
+                    // Precision Wavefront Rings
+                    val waveCenter = Offset(w * 0.60f, h * 0.28f)
+                    for (i in 1..3) {
+                        drawCircle(
+                            color = Color(0xFF3DE8D2).copy(alpha = 0.35f - i * 0.08f),
+                            radius = i * 14.dp.toPx(),
+                            center = waveCenter,
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.2.dp.toPx())
+                        )
+                    }
+                    drawCircle(Color(0xFFE8FFFB), radius = 3.dp.toPx(), center = waveCenter)
                 }
                 else -> {
-                    // Geometric grid lines
-                    drawLine(
-                        color = Color.White.copy(alpha = 0.35f),
-                        start = Offset(0f, h * 0.4f),
-                        end = Offset(w, h * 0.4f),
-                        strokeWidth = 1.5.dp.toPx()
-                    )
+                    // Multi-band spectrum pillars
+                    val barCount = 7
+                    val barW = 3.dp.toPx()
+                    val gap = 6.dp.toPx()
+                    val startX = (w - (barCount * barW + (barCount - 1) * gap)) * 0.5f
+                    val heights = listOf(0.3f, 0.55f, 0.85f, 1.0f, 0.70f, 0.45f, 0.25f)
+                    for (i in 0 until barCount) {
+                        val bx = startX + i * (barW + gap)
+                        val bH = 22.dp.toPx() * heights[i]
+                        drawRoundRect(
+                            brush = Brush.verticalGradient(listOf(Color(0xFF3DE8D2), Color(0xFF21CDB8))),
+                            topLeft = Offset(bx, h * 0.48f - bH),
+                            size = Size(barW, bH),
+                            cornerRadius = CornerRadius(1.5.dp.toPx(), 1.5.dp.toPx())
+                        )
+                    }
                 }
             }
 
@@ -442,6 +473,31 @@ private fun LibraryCard3D(
                 color = WePlaySurface,
                 topLeft = Offset(0f, h * 0.62f),
                 size = Size(w, h * 0.38f)
+            )
+        }
+
+        // Audiophile Badge (Top Right)
+        val badgeText = when (theme) {
+            "ambient" -> "FLAC 24/96"
+            "focus" -> "SPATIAL 3D"
+            "chill" -> "DSD 5.6M"
+            else -> "LPCM 48k"
+        }
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(8.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(Color(0xFF090D14).copy(alpha = 0.85f))
+                .border(0.8.dp, WePlayBorder, RoundedCornerShape(4.dp))
+                .padding(horizontal = 6.dp, vertical = 2.dp)
+        ) {
+            Text(
+                text = badgeText,
+                fontSize = 8.sp,
+                fontWeight = FontWeight.Bold,
+                color = WePlayTealGlow,
+                letterSpacing = 0.5.sp
             )
         }
 

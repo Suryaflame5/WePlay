@@ -21,7 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -47,43 +47,45 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.weplay.sync.shared.model.NearbyStream
 import com.weplay.sync.ui.components.FlowingCopperRibbon
+import com.weplay.sync.ui.components.RealQRCode
 import com.weplay.sync.ui.components.WePlayIcon
 import com.weplay.sync.ui.components.WePlayIconType
-import com.weplay.sync.ui.components.WePlayStreamQRCode
 import com.weplay.sync.ui.theme.WePlayBorder
 import com.weplay.sync.ui.theme.WePlayBorderSubtle
 import com.weplay.sync.ui.theme.WePlayObsidian
 import com.weplay.sync.ui.theme.WePlayOrangeGlow
 import com.weplay.sync.ui.theme.WePlayOrangePrimary
+import com.weplay.sync.ui.theme.WePlayStatusGreen
+import com.weplay.sync.ui.theme.WePlayStatusRed
+import com.weplay.sync.ui.theme.WePlaySurface
+import com.weplay.sync.ui.theme.WePlaySurfaceElevated
 import com.weplay.sync.ui.theme.WePlayTextMuted
 import com.weplay.sync.ui.theme.WePlayTextPrimary
 import com.weplay.sync.ui.theme.WePlayTextSecondary
 
 /**
- * Screen 4: Master Join Session Screen ("Join WePlay Session").
- * Exact visual match to Screen 4 in the design reference:
- * - Top Bar: Back arrow "<" + Scanner reticle "[ ]"
- * - "Join WePlay Session" header + "Scan QR or enter PIN"
- * - Large crisp QR code framed by 4 glowing orange corner registration brackets "[ ]"
- * - Subtle "OR" horizontal divider
- * - Pill capsule PIN input field with clear "(X)" button
+ * Screen 5: Master Join Session Screen ("Join WePlay Session").
+ * Exact visual match to Screen 5 in the design reference:
+ * - Top Bar: Back arrow "<" + "Join WePlay Session" + scanner crop reticle icon
+ * - Hero: Scannable QR code view with 4 glowing amber corner reticles
+ * - "OR" divider
+ * - Capsule text input with PIN ("WP-4829") and (X) clear button
  * - Radiant molten orange pill button: "Join"
- * - Helper tip: Headphone icon + "Adjust volume after joining"
- * - Flowing metallic copper ribbon filament in the bottom backdrop
+ * - Live Connected State with real host telemetry & Leave button when streaming
  */
 @Composable
 fun JoinSessionScreen(
     isConnectedToHost: Boolean,
     connectedHostName: String?,
     connectedSessionCode: String?,
-    nearbyStreams: List<NearbyStream>,
+    nearbyStreams: List<NearbyStream> = emptyList(),
     onConnectByCode: (String) -> Unit,
-    onConnectToStream: (NearbyStream) -> Unit,
-    onLeaveSession: () -> Unit,
+    onConnectToStream: (NearbyStream) -> Unit = {},
+    onLeaveSession: () -> Unit = {},
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var enteredPin by remember { mutableStateOf("WP-4829") }
+    var enteredPin by remember { mutableStateOf(connectedSessionCode ?: "WP-4829") }
 
     Box(
         modifier = modifier
@@ -115,7 +117,7 @@ fun JoinSessionScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Default.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
                     tint = WePlayTextPrimary,
                     modifier = Modifier
@@ -142,168 +144,218 @@ fun JoinSessionScreen(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Scan QR or enter PIN",
+                text = if (isConnectedToHost) "Connected to Broadcast" else "Scan QR or enter PIN",
                 fontSize = 13.sp,
-                color = WePlayTextSecondary
+                color = if (isConnectedToHost) WePlayStatusGreen else WePlayTextSecondary
             )
 
             Spacer(modifier = Modifier.height(26.dp))
 
-            // 3. Central QR Code with 4 Glowing Orange Corner Reticles
-            Box(
-                modifier = Modifier
-                    .size(210.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                // Canvas drawing the 4 glowing corner brackets
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    val w = this.size.width
-                    val h = this.size.height
-                    val bracketLen = 28.dp.toPx()
-                    val stroke = 3.dp.toPx()
-                    val bracketColor = WePlayOrangeGlow
-
-                    // Top-Left bracket
-                    drawLine(bracketColor, Offset(0f, 0f), Offset(bracketLen, 0f), stroke, cap = StrokeCap.Round)
-                    drawLine(bracketColor, Offset(0f, 0f), Offset(0f, bracketLen), stroke, cap = StrokeCap.Round)
-
-                    // Top-Right bracket
-                    drawLine(bracketColor, Offset(w, 0f), Offset(w - bracketLen, 0f), stroke, cap = StrokeCap.Round)
-                    drawLine(bracketColor, Offset(w, 0f), Offset(w, bracketLen), stroke, cap = StrokeCap.Round)
-
-                    // Bottom-Left bracket
-                    drawLine(bracketColor, Offset(0f, h), Offset(bracketLen, h), stroke, cap = StrokeCap.Round)
-                    drawLine(bracketColor, Offset(0f, h), Offset(0f, h - bracketLen), stroke, cap = StrokeCap.Round)
-
-                    // Bottom-Right bracket
-                    drawLine(bracketColor, Offset(w, h), Offset(w - bracketLen, h), stroke, cap = StrokeCap.Round)
-                    drawLine(bracketColor, Offset(w, h), Offset(w, h - bracketLen), stroke, cap = StrokeCap.Round)
-                }
-
-                // QR Code Container
+            if (!isConnectedToHost) {
+                // 3. Central QR Code with 4 Glowing Orange Corner Reticles
                 Box(
-                    modifier = Modifier
-                        .size(175.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color.White)
-                        .padding(8.dp),
+                    modifier = Modifier.size(210.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    WePlayStreamQRCode(sessionCode = "WP-4829")
-                }
-            }
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        val w = this.size.width
+                        val h = this.size.height
+                        val bracketLen = 28.dp.toPx()
+                        val stroke = 3.dp.toPx()
+                        val bracketColor = WePlayOrangeGlow
 
-            Spacer(modifier = Modifier.height(26.dp))
+                        // Top-Left bracket
+                        drawLine(bracketColor, Offset(0f, 0f), Offset(bracketLen, 0f), stroke, cap = StrokeCap.Round)
+                        drawLine(bracketColor, Offset(0f, 0f), Offset(0f, bracketLen), stroke, cap = StrokeCap.Round)
 
-            // 4. "OR" Divider
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 48.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                HorizontalDivider(
-                    modifier = Modifier.weight(1f),
-                    color = WePlayBorderSubtle,
-                    thickness = 1.dp
-                )
-                Text(
-                    text = "OR",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = WePlayTextMuted,
-                    modifier = Modifier.padding(horizontal = 14.dp)
-                )
-                HorizontalDivider(
-                    modifier = Modifier.weight(1f),
-                    color = WePlayBorderSubtle,
-                    thickness = 1.dp
-                )
-            }
+                        // Top-Right bracket
+                        drawLine(bracketColor, Offset(w, 0f), Offset(w - bracketLen, 0f), stroke, cap = StrokeCap.Round)
+                        drawLine(bracketColor, Offset(w, 0f), Offset(w, bracketLen), stroke, cap = StrokeCap.Round)
 
-            Spacer(modifier = Modifier.height(24.dp))
+                        // Bottom-Left bracket
+                        drawLine(bracketColor, Offset(0f, h), Offset(bracketLen, h), stroke, cap = StrokeCap.Round)
+                        drawLine(bracketColor, Offset(0f, h), Offset(0f, h - bracketLen), stroke, cap = StrokeCap.Round)
 
-            // 5. Capsule PIN Input Field (Pill container with "WP-4829" + (X) clear icon)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 32.dp)
-                    .height(52.dp)
-                    .clip(RoundedCornerShape(26.dp))
-                    .background(Color(0xFF101520))
-                    .border(1.dp, WePlayBorder, RoundedCornerShape(26.dp))
-                    .padding(horizontal = 20.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    BasicTextField(
-                        value = enteredPin,
-                        onValueChange = { enteredPin = it.uppercase() },
-                        textStyle = TextStyle(
-                            color = WePlayTextPrimary,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace,
-                            letterSpacing = 1.5.sp,
-                            textAlign = TextAlign.Center
-                        ),
-                        singleLine = true,
-                        cursorBrush = SolidColor(WePlayOrangePrimary),
-                        modifier = Modifier.weight(1f)
-                    )
+                        // Bottom-Right bracket
+                        drawLine(bracketColor, Offset(w, h), Offset(w - bracketLen, h), stroke, cap = StrokeCap.Round)
+                        drawLine(bracketColor, Offset(w, h), Offset(w, h - bracketLen), stroke, cap = StrokeCap.Round)
+                    }
 
-                    if (enteredPin.isNotEmpty()) {
-                        WePlayIcon(
-                            type = WePlayIconType.CANCEL,
-                            tint = WePlayTextMuted,
-                            size = 18.dp,
-                            modifier = Modifier.clickable { enteredPin = "" }
+                    // Scannable QR Code Container
+                    Box(
+                        modifier = Modifier
+                            .size(175.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.White)
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        RealQRCode(
+                            content = "weplay://join?code=$enteredPin",
+                            size = 160.dp
                         )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(26.dp))
+
+                // 4. "OR" Divider
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 48.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        color = WePlayBorderSubtle,
+                        thickness = 1.dp
+                    )
+                    Text(
+                        text = "OR",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = WePlayTextMuted,
+                        modifier = Modifier.padding(horizontal = 14.dp)
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        color = WePlayBorderSubtle,
+                        thickness = 1.dp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // 5. Capsule PIN Input Field
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 32.dp)
+                        .height(52.dp)
+                        .clip(RoundedCornerShape(26.dp))
+                        .background(Color(0xFF101520))
+                        .border(1.dp, WePlayBorder, RoundedCornerShape(26.dp))
+                        .padding(horizontal = 20.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        BasicTextField(
+                            value = enteredPin,
+                            onValueChange = { enteredPin = it.uppercase() },
+                            textStyle = TextStyle(
+                                color = WePlayTextPrimary,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace,
+                                letterSpacing = 1.5.sp,
+                                textAlign = TextAlign.Center
+                            ),
+                            singleLine = true,
+                            cursorBrush = SolidColor(WePlayOrangePrimary),
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        if (enteredPin.isNotEmpty()) {
+                            WePlayIcon(
+                                type = WePlayIconType.CANCEL,
+                                tint = WePlayTextMuted,
+                                size = 18.dp,
+                                modifier = Modifier.clickable { enteredPin = "" }
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // 6. Primary Action Button: "Join"
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 32.dp)
+                        .height(54.dp)
+                        .clip(RoundedCornerShape(27.dp))
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(WePlayOrangePrimary, WePlayOrangeGlow)
+                            )
+                        )
+                        .clickable {
+                            if (enteredPin.isNotBlank()) onConnectByCode(enteredPin)
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Join",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        letterSpacing = 0.5.sp
+                    )
+                }
+            } else {
+                // Connected Listener Card
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(WePlaySurface)
+                        .border(1.dp, WePlayStatusGreen.copy(alpha = 0.6f), RoundedCornerShape(20.dp))
+                        .padding(22.dp)
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        WePlayIcon(
+                            type = WePlayIconType.HEADPHONES,
+                            tint = WePlayStatusGreen,
+                            size = 36.dp
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = connectedHostName ?: "WePlay Audio Host",
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = WePlayTextPrimary
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "PIN: ${connectedSessionCode ?: "WP-4829"} • LPCM 48kHz Stereo",
+                            fontSize = 12.sp,
+                            color = WePlayOrangeGlow
+                        )
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        // Disconnect Button
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                                .clip(RoundedCornerShape(24.dp))
+                                .background(WePlaySurfaceElevated)
+                                .border(1.dp, WePlayStatusRed.copy(alpha = 0.6f), RoundedCornerShape(24.dp))
+                                .clickable { onLeaveSession() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Leave Session",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = WePlayStatusRed
+                            )
+                        }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // 6. Primary Action Button: "Join" (Radiant Molten Orange Pill)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 32.dp)
-                    .height(54.dp)
-                    .clip(RoundedCornerShape(27.dp))
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                WePlayOrangePrimary,
-                                WePlayOrangeGlow
-                            )
-                        )
-                    )
-                    .clickable {
-                        if (enteredPin.isNotBlank()) onConnectByCode(enteredPin)
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Join",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    letterSpacing = 0.5.sp
-                )
-            }
-
             Spacer(modifier = Modifier.height(22.dp))
 
-            // 7. Helper Tip: Headphone Icon + "Adjust volume after joining"
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            // 7. Helper Tip
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 WePlayIcon(
                     type = WePlayIconType.HEADPHONES,
                     tint = WePlayOrangeGlow.copy(alpha = 0.85f),

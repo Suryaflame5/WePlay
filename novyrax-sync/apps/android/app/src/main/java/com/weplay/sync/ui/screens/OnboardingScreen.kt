@@ -70,10 +70,10 @@ fun OnboardingScreen(
         ) {
             // 1. Penthouse Sunset Living Room with Floating Glowing Acoustic Orb
             PenthouseSunsetOrb(
-                height = 420.dp
+                height = 300.dp
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // 2. Title & Subtitle
             Column(
@@ -90,7 +90,7 @@ fun OnboardingScreen(
                     letterSpacing = 1.sp
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
                     text = "A Shared Soundscape\nAcross Every Device",
@@ -102,9 +102,9 @@ fun OnboardingScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(36.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
-            // 3. Primary Action Button: "Next >>" (Radiant Molten Orange Pill)
+            // 3. Primary Action Button: "Enter Soundscape →" (Signature Electric Teal Pill)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -129,7 +129,7 @@ fun OnboardingScreen(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "Next",
+                        text = "Enter Soundscape",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,

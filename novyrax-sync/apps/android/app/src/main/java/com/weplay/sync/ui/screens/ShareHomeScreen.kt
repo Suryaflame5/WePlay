@@ -63,6 +63,8 @@ fun ShareHomeScreen(
     activeSession: AudioSharingSession,
     onStartSession: () -> Unit,
     onJoinSession: () -> Unit,
+    onOpenLibrary: () -> Unit,
+    onOpenRooms: () -> Unit,
     onOpenDevices: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenLiveSession: () -> Unit,
@@ -102,24 +104,23 @@ fun ShareHomeScreen(
                     )
                 }
 
-                // Profile Avatar with Subtle Glow Rim
+                // Profile Avatar with Signature Teal Glow Rim
                 Box(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF1E2638))
+                        .background(Color(0xFF131D28))
                         .border(1.5.dp, WePlayOrangeGlow.copy(alpha = 0.8f), CircleShape)
                         .clickable { onOpenSettings() },
                     contentAlignment = Alignment.Center
                 ) {
-                    // Stylized Cosmic / Avatar glyph
                     Box(
                         modifier = Modifier
                             .size(28.dp)
                             .clip(CircleShape)
                             .background(
                                 Brush.linearGradient(
-                                    listOf(Color(0xFF8B5CF6), Color(0xFFFF6B00))
+                                    listOf(Color(0xFF138073), Color(0xFF21CDB8))
                                 )
                             )
                     )
@@ -247,8 +248,8 @@ fun ShareHomeScreen(
             currentTab = AppScreen.SHARE_HOME,
             onTabSelect = { target ->
                 when (target) {
-                    AppScreen.LIBRARY -> onOpenDevices() // Will be redirected or routed
-                    AppScreen.MULTI_OUTPUT_ROOM -> onOpenDevices()
+                    AppScreen.LIBRARY -> onOpenLibrary()
+                    AppScreen.MULTI_OUTPUT_ROOM -> onOpenRooms()
                     AppScreen.SETTINGS -> onOpenSettings()
                     else -> Unit
                 }

@@ -20,15 +20,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,42 +33,46 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.weplay.sync.shared.model.AudioOutputDevice
+import com.weplay.sync.shared.model.DeviceType
 import com.weplay.sync.ui.components.SonarRadarMesh
 import com.weplay.sync.ui.components.WePlayIcon
 import com.weplay.sync.ui.components.WePlayIconType
 import com.weplay.sync.ui.theme.WePlayBorder
 import com.weplay.sync.ui.theme.WePlayBorderSubtle
 import com.weplay.sync.ui.theme.WePlayObsidian
+import com.weplay.sync.ui.theme.WePlayOrangeDark
+import com.weplay.sync.ui.theme.WePlayOrangeGlow
 import com.weplay.sync.ui.theme.WePlayOrangePrimary
 import com.weplay.sync.ui.theme.WePlaySurface
 import com.weplay.sync.ui.theme.WePlaySurfaceElevated
+import com.weplay.sync.ui.theme.WePlayTextMuted
 import com.weplay.sync.ui.theme.WePlayTextPrimary
 import com.weplay.sync.ui.theme.WePlayTextSecondary
 
 /**
  * Screen 8: Master "Discover Devices" Screen.
- * Exact visual match to Screen 8 in the design reference:
+ * Exact visual fidelity to Screen 8 in the design reference:
  * - Top Bar: Back arrow "<" + "Discover Devices" + radar sync/refresh icon
- * - Hero: SonarRadarMesh with concentric rings, central phone silhouette, rotating sweep,
- *   3 electric blue node dots and connecting rays
- * - Device List with AirPods Pro (-72 dBm), JBL Flip 6 (-68 dBm), Sony WH-1000XM5 (-65 dBm)
- *   and dark pill "Connect" buttons
+ * - Hero: SonarRadarMesh with concentric rings, central phone silhouette, rotating radar sweep
+ * - Real hardware device discovery (reads actual bonded Bluetooth devices & system outputs)
+ * - Honest platform status: Displays Bluetooth Off banner or Permission banner when needed
+ * - Real Connect / Route action buttons
  */
 @Composable
 fun DeviceDiscoveryScreen(
     devices: List<AudioOutputDevice>,
+    isBluetoothEnabled: Boolean = true,
+    hasBluetoothPermission: Boolean = true,
     isScanning: Boolean,
     onStartScan: () -> Unit,
     onStopScan: () -> Unit,
     onToggleSelect: (String) -> Unit,
     onVolumeChange: (String, Float) -> Unit,
+    onOpenBluetoothSettings: () -> Unit = {},
+    onRequestPermission: () -> Unit = {},
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var connectedStates by remember {
-        mutableStateOf(mapOf("airpods" to false, "jbl" to false, "sony" to false))
-    }
-
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -95,7 +95,7 @@ fun DeviceDiscoveryScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Default.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
                     tint = WePlayTextPrimary,
                     modifier = Modifier
@@ -132,47 +132,212 @@ fun DeviceDiscoveryScreen(
                 SonarRadarMesh(size = 260.dp)
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // 3. Discovered Device List (AirPods Pro, JBL Flip 6, Sony WH-1000XM5)
+            // 3. Hardware State Banners & Real Device List
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 22.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                DiscoveredDeviceRow(
-                    name = "AirPods Pro",
-                    signalDbm = "-72 dBm",
-                    iconType = WePlayIconType.HEADPHONES,
-                    isConnected = connectedStates["airpods"] == true,
-                    onConnectClick = {
-                        val curr = connectedStates["airpods"] ?: false
-                        connectedStates = connectedStates + ("airpods" to !curr)
+                if (!isBluetoothEnabled) {
+                    // Bluetooth is Disabled Banner
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(WePlaySurface)
+                            .border(1.dp, WePlayOrangeDark, RoundedCornerShape(16.dp))
+                            .padding(16.dp)
+                    ) {
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                WePlayIcon(
+                                    type = WePlayIconType.ROUTE,
+                                    tint = WePlayOrangeGlow,
+                                    size = 20.dp
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    text = "Bluetooth is Turned Off",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = WePlayTextPrimary
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "Turn on Bluetooth in system settings to discover and route audio to your wireless headphones or speakers.",
+                                fontSize = 12.sp,
+                                color = WePlayTextSecondary,
+                                lineHeight = 17.sp
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(WePlayOrangePrimary)
+                                    .clickable { onOpenBluetoothSettings() }
+                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                            ) {
+                                Text(
+                                    text = "Open Bluetooth Settings",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.White
+                                )
+                            }
+                        }
                     }
-                )
+                } else if (!hasBluetoothPermission) {
+                    // Permission Banner
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(WePlaySurface)
+                            .border(1.dp, WePlayBorder, RoundedCornerShape(16.dp))
+                            .padding(16.dp)
+                    ) {
+                        Column {
+                            Text(
+                                text = "Nearby Devices Permission Needed",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = WePlayTextPrimary
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Android requires Nearby Devices permission to scan and connect paired Bluetooth audio hardware.",
+                                fontSize = 12.sp,
+                                color = WePlayTextSecondary
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(WePlayOrangePrimary)
+                                    .clickable { onRequestPermission() }
+                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                            ) {
+                                Text(
+                                    text = "Grant Permission",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                    }
+                }
 
-                DiscoveredDeviceRow(
-                    name = "JBL Flip 6",
-                    signalDbm = "-68 dBm",
-                    iconType = WePlayIconType.SPEAKER,
-                    isConnected = connectedStates["jbl"] == true,
-                    onConnectClick = {
-                        val curr = connectedStates["jbl"] ?: false
-                        connectedStates = connectedStates + ("jbl" to !curr)
-                    }
-                )
+                // Discovered / Paired Devices
+                if (devices.isNotEmpty()) {
+                    devices.forEach { device ->
+                        val iconType = when (device.type) {
+                            DeviceType.HEADPHONES -> WePlayIconType.HEADPHONES
+                            DeviceType.SYSTEM_BUILTIN -> WePlayIconType.SPEAKER
+                            else -> WePlayIconType.SPEAKER
+                        }
 
-                DiscoveredDeviceRow(
-                    name = "Sony WH-1000XM5",
-                    signalDbm = "-65 dBm",
-                    iconType = WePlayIconType.HEADPHONES,
-                    isConnected = connectedStates["sony"] == true,
-                    onConnectClick = {
-                        val curr = connectedStates["sony"] ?: false
-                        connectedStates = connectedStates + ("sony" to !curr)
+                        val subtitle = if (device.isSelectedForPlayback) {
+                            "Active Audio Output"
+                        } else {
+                            device.hardwareAddress ?: "Available Output"
+                        }
+
+                        DiscoveredDeviceRow(
+                            name = device.name,
+                            signalDbm = subtitle,
+                            iconType = iconType,
+                            isConnected = device.isSelectedForPlayback,
+                            onConnectClick = {
+                                onToggleSelect(device.id)
+                            }
+                        )
                     }
-                )
+                } else if (isBluetoothEnabled) {
+                    // Empty state when Bluetooth is on but no devices found
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(WePlaySurface)
+                            .border(1.dp, WePlayBorder, RoundedCornerShape(16.dp))
+                            .padding(20.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            WePlayIcon(
+                                type = WePlayIconType.HEADPHONES,
+                                tint = WePlayTextMuted,
+                                size = 32.dp
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "No Paired Audio Devices Found",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = WePlayTextPrimary
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Put your Bluetooth headphones or speaker into pairing mode, then pair them in your device settings.",
+                                fontSize = 12.sp,
+                                color = WePlayTextSecondary,
+                                modifier = Modifier.padding(horizontal = 8.dp),
+                                lineHeight = 16.sp
+                            )
+                            Spacer(modifier = Modifier.height(14.dp))
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(WePlaySurfaceElevated)
+                                    .border(1.dp, WePlayBorderSubtle, RoundedCornerShape(12.dp))
+                                    .clickable { onOpenBluetoothSettings() }
+                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                            ) {
+                                Text(
+                                    text = "Pair New Device",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = WePlayTextPrimary
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // 4. Honest Technical Architecture Clarification Card
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color(0xFF10141D))
+                        .border(1.dp, WePlayBorderSubtle, RoundedCornerShape(16.dp))
+                        .padding(16.dp)
+                ) {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Multi-Device Audio Notice",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = WePlayOrangeGlow
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Standard Android hardware routes media to one active Bluetooth accessory per phone. To listen together through multiple pairs of headphones, use WePlay's Host Broadcast to stream synchronized lossless audio across multiple companion phones over Wi-Fi!",
+                            fontSize = 11.sp,
+                            color = WePlayTextSecondary,
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
             }
         }
     }
@@ -210,7 +375,7 @@ private fun DiscoveredDeviceRow(
                 ) {
                     WePlayIcon(
                         type = iconType,
-                        tint = WePlayTextPrimary,
+                        tint = if (isConnected) WePlayOrangePrimary else WePlayTextPrimary,
                         size = 20.dp
                     )
                 }
@@ -228,12 +393,12 @@ private fun DiscoveredDeviceRow(
                     Text(
                         text = signalDbm,
                         fontSize = 11.sp,
-                        color = WePlayTextSecondary
+                        color = if (isConnected) WePlayOrangeGlow else WePlayTextSecondary
                     )
                 }
             }
 
-            // Dark Pill "Connect" Button
+            // Dark Pill "Connect" / "Active Route" Button
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(18.dp))
@@ -246,11 +411,11 @@ private fun DiscoveredDeviceRow(
                         shape = RoundedCornerShape(18.dp)
                     )
                     .clickable { onConnectClick() }
-                    .padding(horizontal = 18.dp, vertical = 8.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = if (isConnected) "Connected" else "Connect",
+                    text = if (isConnected) "Active" else "Select Route",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color.White

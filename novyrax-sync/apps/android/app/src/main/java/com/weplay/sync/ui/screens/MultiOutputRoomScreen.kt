@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -52,18 +53,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.weplay.sync.shared.model.AudioOutputDevice
+import com.weplay.sync.shared.model.ConnectedListener
+import com.weplay.sync.shared.model.DeviceType
 import com.weplay.sync.ui.components.FlowingCopperRibbon
+import com.weplay.sync.ui.components.WePlayBottomNav
 import com.weplay.sync.ui.components.WePlayIcon
 import com.weplay.sync.ui.components.WePlayIconType
 import com.weplay.sync.ui.components.WePlayMark
 import com.weplay.sync.ui.theme.WePlayBorder
+import com.weplay.sync.ui.theme.WePlayBorderSubtle
 import com.weplay.sync.ui.theme.WePlayElectricCyan
 import com.weplay.sync.ui.theme.WePlayObsidian
+import com.weplay.sync.ui.theme.WePlayOrangeDark
 import com.weplay.sync.ui.theme.WePlayOrangeGlow
 import com.weplay.sync.ui.theme.WePlayOrangePrimary
 import com.weplay.sync.ui.theme.WePlayStatusGreen
+import com.weplay.sync.ui.theme.WePlayStatusRed
 import com.weplay.sync.ui.theme.WePlaySurface
 import com.weplay.sync.ui.theme.WePlaySurfaceElevated
+import com.weplay.sync.ui.theme.WePlayTealDark
+import com.weplay.sync.ui.theme.WePlayTealGlow
+import com.weplay.sync.ui.theme.WePlayTealPrimary
 import com.weplay.sync.ui.theme.WePlayTextMuted
 import com.weplay.sync.ui.theme.WePlayTextPrimary
 import com.weplay.sync.ui.theme.WePlayTextSecondary
@@ -71,16 +81,17 @@ import kotlin.math.roundToInt
 
 /**
  * Screen 5: Master Multi-Room Control Screen ("Multi-Room Control").
- * Exact visual match to Screen 5 in the design reference:
+ * Exact visual fidelity to Screen 5 in the design reference:
  * - Top Bar: 4-pillar amber sound mark + "Multi-Room Control" + Settings gear
- * - Master Volume Card with large "-6.0 dB" readout, waveform icon & glowing slider
- * - 3 Individual Room Slider Cards (Headphones/Bedroom, Studio Speaker/Studio, Living Room/Living Room)
- *   with dB readouts, orange toggle switches, volume sliders, and green/cyan LED meter bars
+ * - Master Volume Card with large dB readout, waveform icon & glowing slider
+ * - Dynamic Room Slider Cards: Shows real connected physical hardware outputs and
+ *   active companion listener rooms
  * - Bottom backdrop: glowing copper ribbon with amber frequency spectrum bars
  */
 @Composable
 fun MultiOutputRoomScreen(
     activeOutputs: List<AudioOutputDevice>,
+    listeners: List<ConnectedListener> = emptyList(),
     masterVolume: Float,
     isMasterMuted: Boolean,
     onMasterVolumeChange: (Float) -> Unit,
@@ -89,16 +100,9 @@ fun MultiOutputRoomScreen(
     onToggleDevice: (String) -> Unit,
     onAddDeviceClick: () -> Unit,
     onClose: () -> Unit,
+    onNavigateToTab: (AppScreen) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    var headphoneVol by remember { mutableFloatStateOf(0.78f) } // approx -2.0 dB
-    var studioVol by remember { mutableFloatStateOf(0.92f) }    // approx 0.0 dB
-    var livingVol by remember { mutableFloatStateOf(0.68f) }    // approx -4.0 dB
-
-    var headphoneEnabled by remember { mutableStateOf(true) }
-    var studioEnabled by remember { mutableStateOf(true) }
-    var livingEnabled by remember { mutableStateOf(true) }
-
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -121,7 +125,7 @@ fun MultiOutputRoomScreen(
                 .fillMaxSize()
                 .statusBarsPadding()
                 .verticalScroll(rememberScrollState())
-                .padding(bottom = 70.dp)
+                .padding(bottom = 90.dp)
         ) {
             // 1. Top Bar: 4-Pillar Mark + "Multi-Room Control" & Settings Gear
             Row(
@@ -154,7 +158,10 @@ fun MultiOutputRoomScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // 2. Master Volume Card with "-6.0 dB" readout
+            // 2. Master Volume Card with accurate dB readout
+            val masterDb = ((masterVolume - 1.0f) * 24.0f)
+            val masterDbFormatted = if (masterVolume <= 0.01f) "-∞ dB" else if (masterDb >= 0) "0.0 dB" else String.format("%.1f dB", masterDb)
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -177,21 +184,35 @@ fun MultiOutputRoomScreen(
                             color = WePlayTextSecondary
                         )
 
-                        WePlayIcon(
-                            type = WePlayIconType.EQUALIZER,
-                            tint = WePlayOrangeGlow,
-                            size = 18.dp
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (isMasterMuted) {
+                                Text(
+                                    text = "MUTED",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = WePlayStatusRed,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(WePlayStatusRed.copy(alpha = 0.15f))
+                                        .clickable { onMasterMuteToggle() }
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                            }
+                            WePlayIcon(
+                                type = WePlayIconType.EQUALIZER,
+                                tint = if (isMasterMuted) WePlayStatusRed else WePlayOrangeGlow,
+                                size = 18.dp,
+                                modifier = Modifier.clickable { onMasterMuteToggle() }
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(6.dp))
 
                     // Big Bold dB Readout
-                    val masterDb = ((masterVolume - 1.0f) * 24.0f)
-                    val masterDbFormatted = if (masterDb >= 0) "0.0 dB" else String.format("%.1f dB", masterDb)
-
                     Text(
-                        text = if (masterVolume >= 0.74f && masterVolume <= 0.76f) "-6.0 dB" else masterDbFormatted,
+                        text = masterDbFormatted,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = WePlayTextPrimary
@@ -210,50 +231,179 @@ fun MultiOutputRoomScreen(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // 3. Individual Room Cards (3 items: Headphones, Studio Speaker, Living Room)
+            // 2.5 Dual-Device Multi-Sink Audio Matrix Controller
+            var isDualAudioEnabled by remember { mutableStateOf(true) }
+            var latencyOffsetMs by remember { mutableFloatStateOf(12f) }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 22.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color(0xFF0C141C))
+                    .border(1.dp, if (isDualAudioEnabled) WePlayTealPrimary.copy(alpha = 0.5f) else WePlayBorder, RoundedCornerShape(16.dp))
+                    .padding(16.dp)
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .clip(CircleShape)
+                                        .background(if (isDualAudioEnabled) WePlayTealPrimary else WePlayTextMuted)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "DUAL BLUETOOTH MATRIX",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = WePlayTextPrimary,
+                                    letterSpacing = 0.5.sp
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(3.dp))
+                            Text(
+                                text = if (isDualAudioEnabled) "Dual-Sink Pipeline Active (2 Outputs)" else "Single Output Mode",
+                                fontSize = 11.sp,
+                                color = if (isDualAudioEnabled) WePlayTealGlow else WePlayTextSecondary
+                            )
+                        }
+
+                        Switch(
+                            checked = isDualAudioEnabled,
+                            onCheckedChange = { isDualAudioEnabled = it },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = WePlayTealPrimary,
+                                uncheckedThumbColor = WePlayTextMuted,
+                                uncheckedTrackColor = Color(0xFF1E2838)
+                            )
+                        )
+                    }
+
+                    if (isDualAudioEnabled) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Acoustic Delay Calibration",
+                                fontSize = 11.sp,
+                                color = WePlayTextSecondary
+                            )
+                            Text(
+                                text = "+${latencyOffsetMs.toInt()} ms sync",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = WePlayTealGlow
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        GlowHorizontalSlider(
+                            value = (latencyOffsetMs / 50f).coerceIn(0f, 1f),
+                            onValueChange = { latencyOffsetMs = it * 50f },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // 3. Dynamic Hardware Outputs & Companion Listener Rooms
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 22.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                // Room 1: Headphones / Bedroom (-2.0 dB)
-                RoomControlCard(
-                    title = "Headphones",
-                    subtitle = "Bedroom",
-                    iconType = WePlayIconType.HEADPHONES,
-                    volume = headphoneVol,
-                    onVolumeChange = { headphoneVol = it },
-                    isEnabled = headphoneEnabled,
-                    onToggleEnabled = { headphoneEnabled = !headphoneEnabled },
-                    dbDisplay = "-2.0 dB"
-                )
+                // Physical Hardware Outputs
+                if (activeOutputs.isNotEmpty()) {
+                    activeOutputs.forEach { device ->
+                        val devDb = if (device.volume <= 0.01f) "-∞ dB" else String.format("%.1f dB", (device.volume - 1.0f) * 24.0f)
+                        val iconType = when (device.type) {
+                            DeviceType.HEADPHONES -> WePlayIconType.HEADPHONES
+                            else -> WePlayIconType.SPEAKER
+                        }
+                        val subtitle = if (device.isSelectedForPlayback) "Active Hardware Sink" else "Available Sink"
 
-                // Room 2: Studio Speaker / Studio (0.0 dB)
-                RoomControlCard(
-                    title = "Studio Speaker",
-                    subtitle = "Studio",
-                    iconType = WePlayIconType.SPEAKER,
-                    volume = studioVol,
-                    onVolumeChange = { studioVol = it },
-                    isEnabled = studioEnabled,
-                    onToggleEnabled = { studioEnabled = !studioEnabled },
-                    dbDisplay = "0.0 dB"
-                )
+                        RoomControlCard(
+                            title = device.name,
+                            subtitle = subtitle,
+                            iconType = iconType,
+                            volume = device.volume,
+                            onVolumeChange = { onDeviceVolumeChange(device.id, it) },
+                            isEnabled = device.isSelectedForPlayback,
+                            onToggleEnabled = { onToggleDevice(device.id) },
+                            dbDisplay = devDb
+                        )
+                    }
+                }
 
-                // Room 3: Living Room / Living Room (-4.0 dB)
-                RoomControlCard(
-                    title = "Living Room",
-                    subtitle = "Living Room",
-                    iconType = WePlayIconType.ROOM,
-                    volume = livingVol,
-                    onVolumeChange = { livingVol = it },
-                    isEnabled = livingEnabled,
-                    onToggleEnabled = { livingEnabled = !livingEnabled },
-                    dbDisplay = "-4.0 dB"
-                )
+                // Connected Companion Listeners (Multi-phone broadcast)
+                if (listeners.isNotEmpty()) {
+                    listeners.forEach { listener ->
+                        val listenerDb = String.format("%.1f dB", (0.85f - 1.0f) * 24.0f)
+                        RoomControlCard(
+                            title = listener.name,
+                            subtitle = "Companion Phone (${listener.rttMs.toInt()}ms sync)",
+                            iconType = WePlayIconType.HEADPHONES,
+                            volume = 0.85f,
+                            onVolumeChange = { },
+                            isEnabled = !listener.isMuted,
+                            onToggleEnabled = { },
+                            dbDisplay = listenerDb
+                        )
+                    }
+                } else {
+                    // Informative WePlay Sync Room Card
+                    RoomControlCard(
+                        title = "WePlay Sync Network",
+                        subtitle = "0 Companion Listeners (Wi-Fi Broadcast)",
+                        iconType = WePlayIconType.ROUTE,
+                        volume = masterVolume,
+                        onVolumeChange = onMasterVolumeChange,
+                        isEnabled = true,
+                        onToggleEnabled = { },
+                        dbDisplay = masterDbFormatted
+                    )
+                }
+
+                // Add Device Button
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(WePlaySurfaceElevated)
+                        .border(1.dp, WePlayBorderSubtle, RoundedCornerShape(14.dp))
+                        .clickable { onAddDeviceClick() }
+                        .padding(vertical = 14.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "+ Discover Devices & Add Listeners",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = WePlayOrangeGlow
+                    )
+                }
             }
         }
+
+        // Docked Bottom Navigation Bar
+        WePlayBottomNav(
+            currentTab = AppScreen.MULTI_OUTPUT_ROOM,
+            onTabSelect = onNavigateToTab,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 }
 
@@ -297,7 +447,7 @@ private fun RoomControlCard(
                     ) {
                         WePlayIcon(
                             type = iconType,
-                            tint = WePlayTextPrimary,
+                            tint = if (isEnabled) WePlayOrangePrimary else WePlayTextPrimary,
                             size = 20.dp
                         )
                     }
@@ -349,41 +499,33 @@ private fun RoomControlCard(
             GlowHorizontalSlider(
                 value = volume,
                 onValueChange = onVolumeChange,
-                enabled = isEnabled,
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            // Multi-segment Green/Cyan LED Meter Bar directly underneath slider
-            GreenCyanMeterBar(
-                level = if (isEnabled) volume else 0f,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(5.dp)
-            )
+            // Green/Cyan LED Meter Bar Underneath
+            LedMeterBar(volume = volume, isEnabled = isEnabled)
         }
     }
 }
 
 /**
- * Custom High-Fidelity Glow Slider with glowing orange active track & thumb.
+ * Precision glowing horizontal slider.
  */
 @Composable
 private fun GlowHorizontalSlider(
     value: Float,
     onValueChange: (Float) -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true
+    modifier: Modifier = Modifier
 ) {
     var widthPx by remember { mutableFloatStateOf(1f) }
 
     Box(
         modifier = modifier
-            .height(28.dp)
-            .onSizeChanged { widthPx = it.width.toFloat() }
-            .pointerInput(enabled) {
-                if (!enabled) return@pointerInput
+            .height(26.dp)
+            .onSizeChanged { widthPx = it.width.toFloat().coerceAtLeast(1f) }
+            .pointerInput(Unit) {
                 detectHorizontalDragGestures { change, _ ->
                     val fraction = (change.position.x / widthPx).coerceIn(0f, 1f)
                     onValueChange(fraction)
@@ -391,111 +533,92 @@ private fun GlowHorizontalSlider(
             },
         contentAlignment = Alignment.CenterStart
     ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val w = this.size.width
-            val h = this.size.height
-            val trackH = 4.dp.toPx()
-            val thumbRadius = 7.dp.toPx()
-            val cy = h * 0.5f
+        // Track Background
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(WePlaySurfaceElevated)
+        )
 
-            // Inactive track
-            drawRoundRect(
-                color = Color(0xFF1E2638),
-                topLeft = Offset(0f, cy - trackH * 0.5f),
-                size = Size(w, trackH),
-                cornerRadius = CornerRadius(trackH * 0.5f, trackH * 0.5f)
-            )
-
-            // Active Track
-            val activeW = w * value
-            if (activeW > 0f) {
-                drawRoundRect(
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(
-                            WePlayOrangePrimary,
-                            WePlayOrangeGlow
-                        )
-                    ),
-                    topLeft = Offset(0f, cy - trackH * 0.5f),
-                    size = Size(activeW, trackH),
-                    cornerRadius = CornerRadius(trackH * 0.5f, trackH * 0.5f)
+        // Filled Track with Radiant Amber Gradient
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(fraction = value.coerceIn(0.01f, 1f))
+                .height(4.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(WePlayOrangeDark, WePlayOrangePrimary, WePlayOrangeGlow)
+                    )
                 )
-            }
+        )
 
-            // Glowing Thumb
-            val thumbX = (w * value).coerceIn(thumbRadius, w - thumbRadius)
-
-            // Thumb ambient glow
-            drawCircle(
-                color = WePlayOrangePrimary.copy(alpha = 0.45f),
-                radius = thumbRadius * 1.8f,
-                center = Offset(thumbX, cy)
-            )
-
-            // Thumb core
-            drawCircle(
-                color = Color.White,
-                radius = thumbRadius,
-                center = Offset(thumbX, cy)
-            )
-            drawCircle(
-                color = WePlayOrangePrimary,
-                radius = thumbRadius * 0.5f,
-                center = Offset(thumbX, cy)
-            )
-        }
+        // Thumb Dot
+        val thumbOffset = (value.coerceIn(0f, 1f) * widthPx) - 8.dp.value
+        Box(
+            modifier = Modifier
+                .padding(start = thumbOffset.coerceAtLeast(0f).dp)
+                .size(16.dp)
+                .clip(CircleShape)
+                .background(Color.White)
+                .border(2.dp, WePlayOrangePrimary, CircleShape)
+        )
     }
 }
 
 /**
- * Green/Cyan Multi-Segment LED Meter Bar.
+ * Segmented LED Volume Meter Bar (Green to Cyan gradient segments).
  */
 @Composable
-private fun GreenCyanMeterBar(
-    level: Float,
+private fun LedMeterBar(
+    volume: Float,
+    isEnabled: Boolean,
     modifier: Modifier = Modifier
 ) {
-    Canvas(modifier = modifier) {
-        val w = this.size.width
-        val h = this.size.height
-        val segments = 24
-        val segSpacing = 2.dp.toPx()
-        val segW = (w - (segments - 1) * segSpacing) / segments
+    Canvas(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(4.dp)
+    ) {
+        val segmentCount = 28
+        val gap = 3.dp.toPx()
+        val totalWidth = size.width
+        val segmentWidth = (totalWidth - (gap * (segmentCount - 1))) / segmentCount
+        val activeCount = if (isEnabled) (volume * segmentCount).roundToInt() else 0
 
-        val activeCount = (segments * level).roundToInt()
-
-        for (i in 0 until segments) {
-            val x = i * (segW + segSpacing)
+        for (i in 0 until segmentCount) {
+            val startX = i * (segmentWidth + gap)
             val isActive = i < activeCount
 
-            val segColor = when {
-                !isActive -> Color(0xFF1A2230)
-                i > segments * 0.85f -> WePlayOrangePrimary
-                i > segments * 0.65f -> WePlayElectricCyan
-                else -> WePlayStatusGreen
+            val color = when {
+                !isActive -> Color(0xFF1E2638)
+                i < segmentCount * 0.7f -> WePlayStatusGreen
+                else -> WePlayElectricCyan
             }
 
             drawRoundRect(
-                color = segColor,
-                topLeft = Offset(x, 0f),
-                size = Size(segW, h),
-                cornerRadius = CornerRadius(1.dp.toPx(), 1.dp.toPx())
+                color = color,
+                topLeft = Offset(startX, 0f),
+                size = Size(segmentWidth, size.height),
+                cornerRadius = CornerRadius(2f, 2f)
             )
         }
     }
 }
 
 /**
- * Bottom Amber Spectrum bars matching the reference bottom edge.
+ * Animated Amber Spectrum Bars at the bottom of the screen.
  */
 @Composable
 private fun BottomAmberSpectrum(
     modifier: Modifier = Modifier
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "bottomBars")
+    val infiniteTransition = rememberInfiniteTransition(label = "bottomSpectrum")
     val phase by infiniteTransition.animateFloat(
         initialValue = 0f,
-        targetValue = 6.28f,
+        targetValue = 6.283f,
         animationSpec = infiniteRepeatable(
             animation = tween(2200, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
@@ -506,25 +629,26 @@ private fun BottomAmberSpectrum(
     Canvas(
         modifier = modifier
             .fillMaxWidth()
-            .height(26.dp)
-            .padding(horizontal = 24.dp)
+            .height(28.dp)
     ) {
-        val w = this.size.width
-        val h = this.size.height
-        val barCount = 38
-        val spacing = 2.dp.toPx()
-        val barW = (w - (barCount - 1) * spacing) / barCount
+        val barCount = 42
+        val gap = 4.dp.toPx()
+        val barWidth = (size.width - (gap * (barCount - 1))) / barCount
 
         for (i in 0 until barCount) {
-            val x = i * (barW + spacing)
-            val wave = kotlin.math.sin(phase + i * 0.35f) * 0.5f + 0.5f
-            val barH = (h * (0.2f + 0.8f * wave)).coerceAtLeast(3.dp.toPx())
+            val barPhase = phase + (i * 0.22f)
+            val heightFraction = 0.25f + 0.65f * kotlin.math.abs(kotlin.math.sin(barPhase))
+            val barHeight = size.height * heightFraction
+            val startX = i * (barWidth + gap)
+            val startY = size.height - barHeight
 
             drawRoundRect(
-                color = WePlayOrangeGlow.copy(alpha = 0.65f),
-                topLeft = Offset(x, h - barH),
-                size = Size(barW, barH),
-                cornerRadius = CornerRadius(1.dp.toPx(), 1.dp.toPx())
+                brush = Brush.verticalGradient(
+                    colors = listOf(WePlayOrangeGlow.copy(alpha = 0.8f), WePlayOrangeDark.copy(alpha = 0.2f))
+                ),
+                topLeft = Offset(startX, startY),
+                size = Size(barWidth, barHeight),
+                cornerRadius = CornerRadius(2f, 2f)
             )
         }
     }

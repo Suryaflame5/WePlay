@@ -62,6 +62,9 @@ import com.weplay.sync.ui.theme.WePlayOrangeGlow
 import com.weplay.sync.ui.theme.WePlayOrangePrimary
 import com.weplay.sync.ui.theme.WePlaySurface
 import com.weplay.sync.ui.theme.WePlaySurfaceElevated
+import com.weplay.sync.ui.theme.WePlayTealDark
+import com.weplay.sync.ui.theme.WePlayTealGlow
+import com.weplay.sync.ui.theme.WePlayTealPrimary
 import com.weplay.sync.ui.theme.WePlayTextMuted
 import com.weplay.sync.ui.theme.WePlayTextPrimary
 import com.weplay.sync.ui.theme.WePlayTextSecondary
@@ -82,10 +85,10 @@ fun PlanetaryOrbSoundstage(
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "planetary")
     val pulseScale by infiniteTransition.animateFloat(
-        initialValue = 0.94f,
-        targetValue = 1.06f,
+        initialValue = 0.95f,
+        targetValue = 1.05f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2600, easing = FastOutSlowInEasing),
+            animation = tween(2800, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "pulse"
@@ -94,15 +97,23 @@ fun PlanetaryOrbSoundstage(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(38000, easing = LinearEasing),
+            animation = tween(36000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "orbit"
     )
+    val photonProgress by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1800, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "photon"
+    )
 
     Box(
-        modifier = modifier
-            .size(size),
+        modifier = modifier.size(size),
         contentAlignment = Alignment.Center
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -111,129 +122,174 @@ fun PlanetaryOrbSoundstage(
             val cx = w * 0.5f
             val cy = h * 0.5f
 
-            // 1. Cosmic Background Nebula Glow
+            // 1. Deep Space Acoustic Vignette & Volumetric Core Glow
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        WePlayOrangePrimary.copy(alpha = 0.16f),
-                        WePlayOrangeDark.copy(alpha = 0.05f),
+                        WePlayTealPrimary.copy(alpha = 0.22f),
+                        WePlayTealDark.copy(alpha = 0.08f),
                         Color.Transparent
                     ),
                     center = Offset(cx, cy),
-                    radius = w * 0.52f
+                    radius = w * 0.55f
                 )
             )
 
-            // 2. Concentric Planetary Orbital Rings (Tilted Ellipses)
+            // 2. Floating Acoustic Micro-Particles (Ambient Constellation)
+            val particleOffsets = listOf(
+                Pair(0.18f, 0.22f), Pair(0.82f, 0.25f), Pair(0.12f, 0.72f), Pair(0.86f, 0.76f),
+                Pair(0.35f, 0.12f), Pair(0.68f, 0.15f), Pair(0.25f, 0.85f), Pair(0.72f, 0.88f),
+                Pair(0.08f, 0.45f), Pair(0.92f, 0.48f), Pair(0.48f, 0.08f), Pair(0.52f, 0.92f)
+            )
+            particleOffsets.forEachIndexed { i, (px, py) ->
+                val particlePhase = Math.sin((orbitRotation * 0.05 + i * 1.3)).toFloat()
+                val alpha = (0.25f + 0.55f * kotlin.math.abs(particlePhase)).coerceIn(0.1f, 0.85f)
+                drawCircle(
+                    color = WePlayTealGlow.copy(alpha = alpha),
+                    radius = (1.2f + 0.8f * kotlin.math.abs(particlePhase)).dp.toPx(),
+                    center = Offset(w * px, h * py)
+                )
+            }
+
+            // 3. Concentric Precision Orbital Rings (Tilted Perspective Ellipses)
             val ringRadii = listOf(
                 Pair(w * 0.28f, h * 0.14f),
                 Pair(w * 0.38f, h * 0.19f),
                 Pair(w * 0.46f, h * 0.23f)
             )
 
-            rotate(degrees = -18f, pivot = Offset(cx, cy)) {
+            rotate(degrees = -16f, pivot = Offset(cx, cy)) {
                 ringRadii.forEachIndexed { idx, (rx, ry) ->
-                    val ringAlpha = if (idx == 1) 0.38f else 0.22f
+                    // Orbital track with subtle laser-etched dashes
                     drawOval(
-                        color = Color(0xFF6B7280).copy(alpha = ringAlpha),
+                        color = Color(0xFF263548).copy(alpha = if (idx == 1) 0.55f else 0.35f),
                         topLeft = Offset(cx - rx, cy - ry),
                         size = Size(rx * 2f, ry * 2f),
-                        style = Stroke(width = 1.2.dp.toPx())
+                        style = Stroke(width = 1.dp.toPx())
                     )
                 }
 
-                // 3. Orbiting Nodes on Rings
-                // Node 1: Left Headphones Node on ring 2
-                val a1 = Math.toRadians((orbitRotation * 0.6f + 210.0).toDouble())
-                val n1x = (cx + ringRadii[1].first * cos(a1)).toFloat()
-                val n1y = (cy + ringRadii[1].second * sin(a1)).toFloat()
+                // 4. Orbiting Hardware Satellite Pods
+                // Node 1: Over-Ear Studio Headphones (Outer Ring)
+                val a1 = Math.toRadians((orbitRotation * 0.55f + 200.0).toDouble())
+                val n1x = (cx + ringRadii[2].first * cos(a1)).toFloat()
+                val n1y = (cy + ringRadii[2].second * sin(a1)).toFloat()
 
-                // Node 2: Speaker node on ring 0
-                val a2 = Math.toRadians((-orbitRotation * 0.8f + 40.0).toDouble())
+                // Node 2: Studio Acoustic Monitor (Inner Ring)
+                val a2 = Math.toRadians((-orbitRotation * 0.75f + 35.0).toDouble())
                 val n2x = (cx + ringRadii[0].first * cos(a2)).toFloat()
                 val n2y = (cy + ringRadii[0].second * sin(a2)).toFloat()
 
-                // Node 3: Studio Earbud node on ring 2
-                val a3 = Math.toRadians((orbitRotation * 0.5f + 320.0).toDouble())
-                val n3x = (cx + ringRadii[2].first * cos(a3)).toFloat()
-                val n3y = (cy + ringRadii[2].second * sin(a3)).toFloat()
+                // Node 3: Auracast Mobile Receiver (Mid Ring)
+                val a3 = Math.toRadians((orbitRotation * 0.45f + 315.0).toDouble())
+                val n3x = (cx + ringRadii[1].first * cos(a3)).toFloat()
+                val n3y = (cy + ringRadii[1].second * sin(a3)).toFloat()
 
-                // Draw Nodes with Glass Halo
                 listOf(
                     Triple(n1x, n1y, "headphones"),
                     Triple(n2x, n2y, "speaker"),
-                    Triple(n3x, n3y, "node")
+                    Triple(n3x, n3y, "auracast")
                 ).forEach { (nx, ny, type) ->
-                    // Subtle tether line to center
+                    // Optical laser tether to center with traveling photon packet
                     drawLine(
-                        color = WePlayOrangeGlow.copy(alpha = 0.15f),
+                        brush = Brush.linearGradient(
+                            colors = listOf(
+                                WePlayTealGlow.copy(alpha = 0.4f),
+                                Color(0xFF107A6D).copy(alpha = 0.15f)
+                            ),
+                            start = Offset(cx, cy),
+                            end = Offset(nx, ny)
+                        ),
                         start = Offset(cx, cy),
                         end = Offset(nx, ny),
                         strokeWidth = 1.dp.toPx()
                     )
 
-                    // Node outer glow
+                    // Traveling photon packet along tether
+                    val photonX = cx + (nx - cx) * photonProgress
+                    val photonY = cy + (ny - cy) * photonProgress
                     drawCircle(
-                        color = WePlayOrangePrimary.copy(alpha = 0.25f),
-                        radius = 16.dp.toPx(),
+                        color = Color.White,
+                        radius = 1.8.dp.toPx(),
+                        center = Offset(photonX, photonY)
+                    )
+
+                    // Hardware Pod Chassis (Milled Gunmetal + Glowing Cyan Ring)
+                    drawCircle(
+                        color = WePlayTealPrimary.copy(alpha = 0.35f),
+                        radius = 18.dp.toPx(),
                         center = Offset(nx, ny)
                     )
-                    // Node dark glass pod
                     drawCircle(
-                        color = Color(0xFF141A26),
-                        radius = 12.dp.toPx(),
+                        color = Color(0xFF0D121B),
+                        radius = 14.dp.toPx(),
                         center = Offset(nx, ny)
                     )
                     drawCircle(
-                        color = WePlayOrangeGlow,
-                        radius = 12.dp.toPx(),
+                        brush = Brush.sweepGradient(
+                            listOf(WePlayTealGlow, Color(0xFF107A6D), WePlayTealPrimary)
+                        ),
+                        radius = 14.dp.toPx(),
                         center = Offset(nx, ny),
                         style = Stroke(width = 1.2.dp.toPx())
                     )
 
-                    // Node center glyph (drawn procedurally)
+                    // Crisp Vector Glyphs inside Hardware Pod
                     when (type) {
                         "headphones" -> {
+                            // Headband arc
                             drawArc(
                                 color = Color.White,
                                 startAngle = 180f,
                                 sweepAngle = 180f,
                                 useCenter = false,
-                                topLeft = Offset(nx - 5.dp.toPx(), ny - 5.dp.toPx()),
-                                size = Size(10.dp.toPx(), 8.dp.toPx()),
+                                topLeft = Offset(nx - 5.5.dp.toPx(), ny - 6.dp.toPx()),
+                                size = Size(11.dp.toPx(), 8.5.dp.toPx()),
                                 style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Round)
                             )
+                            // Earcups
                             drawRoundRect(
-                                color = Color.White,
-                                topLeft = Offset(nx - 6.dp.toPx(), ny - 1.dp.toPx()),
-                                size = Size(2.5.dp.toPx(), 5.dp.toPx()),
-                                cornerRadius = CornerRadius(1.dp.toPx(), 1.dp.toPx())
+                                color = WePlayTealGlow,
+                                topLeft = Offset(nx - 7.dp.toPx(), ny - 1.5.dp.toPx()),
+                                size = Size(2.8.dp.toPx(), 5.5.dp.toPx()),
+                                cornerRadius = CornerRadius(1.2.dp.toPx(), 1.2.dp.toPx())
                             )
                             drawRoundRect(
-                                color = Color.White,
-                                topLeft = Offset(nx + 3.5.dp.toPx(), ny - 1.dp.toPx()),
-                                size = Size(2.5.dp.toPx(), 5.dp.toPx()),
-                                cornerRadius = CornerRadius(1.dp.toPx(), 1.dp.toPx())
+                                color = WePlayTealGlow,
+                                topLeft = Offset(nx + 4.2.dp.toPx(), ny - 1.5.dp.toPx()),
+                                size = Size(2.8.dp.toPx(), 5.5.dp.toPx()),
+                                cornerRadius = CornerRadius(1.2.dp.toPx(), 1.2.dp.toPx())
                             )
                         }
                         "speaker" -> {
+                            // Speaker cone
                             drawRoundRect(
                                 color = Color.White,
-                                topLeft = Offset(nx - 4.dp.toPx(), ny - 5.dp.toPx()),
-                                size = Size(8.dp.toPx(), 10.dp.toPx()),
+                                topLeft = Offset(nx - 4.5.dp.toPx(), ny - 5.5.dp.toPx()),
+                                size = Size(9.dp.toPx(), 11.dp.toPx()),
                                 cornerRadius = CornerRadius(2.dp.toPx(), 2.dp.toPx()),
                                 style = Stroke(width = 1.2.dp.toPx())
                             )
                             drawCircle(
-                                color = Color.White,
-                                radius = 2.dp.toPx(),
-                                center = Offset(nx, ny + 1.dp.toPx())
+                                color = WePlayTealGlow,
+                                radius = 2.4.dp.toPx(),
+                                center = Offset(nx, ny + 1.2.dp.toPx())
                             )
                         }
                         else -> {
+                            // Auracast RF Wave Broadcast Waves
+                            drawArc(
+                                color = Color.White,
+                                startAngle = -45f,
+                                sweepAngle = 90f,
+                                useCenter = false,
+                                topLeft = Offset(nx - 5.dp.toPx(), ny - 5.dp.toPx()),
+                                size = Size(10.dp.toPx(), 10.dp.toPx()),
+                                style = Stroke(width = 1.2.dp.toPx(), cap = StrokeCap.Round)
+                            )
                             drawCircle(
-                                color = WePlayOrangeGlow,
-                                radius = 3.dp.toPx(),
+                                color = WePlayTealGlow,
+                                radius = 2.dp.toPx(),
                                 center = Offset(nx, ny)
                             )
                         }
@@ -241,34 +297,46 @@ fun PlanetaryOrbSoundstage(
                 }
             }
 
-            // 4. Molten Incandescent Acoustic Orb (Centerpiece)
+            // 5. Central Hypnotic Acoustic Sphere & Wavefront Emitting Horizon
             val orbRadius = (w * 0.155f) * pulseScale
 
-            // Outer radiant corona glow
+            // Radiating harmonic wavefront rings
+            val waveRadii = listOf(orbRadius * 1.35f, orbRadius * 1.75f, orbRadius * 2.2f)
+            waveRadii.forEachIndexed { i, r ->
+                val waveAlpha = (0.35f - i * 0.10f).coerceAtLeast(0.06f)
+                drawCircle(
+                    color = WePlayTealGlow.copy(alpha = waveAlpha),
+                    radius = r,
+                    center = Offset(cx, cy),
+                    style = Stroke(width = 1.dp.toPx())
+                )
+            }
+
+            // Radiant Corona Glow
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        WePlayOrangePrimary.copy(alpha = 0.55f),
-                        WePlayOrangeDark.copy(alpha = 0.25f),
+                        WePlayTealGlow.copy(alpha = 0.55f),
+                        WePlayTealPrimary.copy(alpha = 0.30f),
                         Color.Transparent
                     ),
                     center = Offset(cx, cy),
-                    radius = orbRadius * 2.2f
+                    radius = orbRadius * 2.0f
                 )
             )
 
-            // Volumetric Sphere Surface Gradients
-            // Highlight offset towards upper-left
+            // Volumetric Sphere Surface (Specular 3D Lighting)
             val highlightCenter = Offset(cx - orbRadius * 0.28f, cy - orbRadius * 0.32f)
 
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        Color(0xFFFFF2D0),           // Solar White Incandescence
-                        Color(0xFFFFB300),           // Radiant Gold-Amber
-                        WePlayOrangePrimary,         // Molten Orange Core
-                        Color(0xFFC43300),           // Deep Magma Edge
-                        Color(0xFF380800)            // Shadow Rim
+                        Color(0xFFFFFFFF),           // Crisp Specular Glint
+                        Color(0xFFE8FFFB),           // Crystalline Ice-Teal
+                        WePlayTealGlow,              // Luminous Cyan-Teal Peak
+                        WePlayTealPrimary,           // Signature Electric Teal (#21CDB8)
+                        WePlayTealDark,              // Metallic Precision Shadow
+                        Color(0xFF051D1A)            // Deep Obsidian Rim
                     ),
                     center = highlightCenter,
                     radius = orbRadius
@@ -277,13 +345,24 @@ fun PlanetaryOrbSoundstage(
                 center = Offset(cx, cy)
             )
 
-            // Inner molten texture filament ring
-            drawCircle(
-                color = Color.White.copy(alpha = 0.45f),
-                radius = orbRadius * 0.35f,
-                center = highlightCenter,
-                style = Stroke(width = 1.dp.toPx())
-            )
+            // Centered 5-Bar WePlay Equalizer Soundmark inside the Core
+            val barW = 2.dp.toPx()
+            val barHBase = orbRadius * 0.40f
+            val barOffsets = listOf(-2f, -1f, 0f, 1f, 2f)
+            val barHeights = listOf(0.45f, 0.75f, 1.0f, 0.75f, 0.45f)
+
+            barOffsets.forEachIndexed { idx, xOffset ->
+                val hFactor = barHeights[idx]
+                val bH = barHBase * hFactor
+                val bx = cx + (xOffset * 5.dp.toPx())
+                drawLine(
+                    color = Color(0xFF091416),
+                    start = Offset(bx, cy - bH * 0.5f),
+                    end = Offset(bx, cy + bH * 0.5f),
+                    strokeWidth = barW,
+                    cap = StrokeCap.Round
+                )
+            }
         }
     }
 }
@@ -405,9 +484,10 @@ fun IsometricSpectrumCube(
                     val barWidth = 3.5.dp.toPx()
                     val barBrush = Brush.verticalGradient(
                         colors = listOf(
-                            Color(0xFFFFB300),       // Bright Amber Top
-                            WePlayOrangePrimary,     // Molten Orange
-                            WePlayOrangeDark         // Base
+                            Color(0xFFE8FFFB),       // Luminous White-Cyan Peak
+                            WePlayTealGlow,          // Radiant Cyan (#3DE8D2)
+                            WePlayTealPrimary,       // Electric Studio Teal (#21CDB8)
+                            WePlayTealDark           // Deep Milled Base
                         ),
                         startY = by - barH,
                         endY = by
@@ -415,7 +495,7 @@ fun IsometricSpectrumCube(
 
                     // Bar glow
                     drawLine(
-                        color = WePlayOrangeGlow.copy(alpha = 0.35f),
+                        color = WePlayTealGlow.copy(alpha = 0.38f),
                         start = Offset(bx, by),
                         end = Offset(bx, by - barH),
                         strokeWidth = barWidth * 2.2f,
@@ -597,13 +677,14 @@ fun VinylAlbumCover(
                         )
                     }
 
-                    // Center Amber Label
+                    // Center Studio Teal Label
                     drawCircle(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                Color(0xFFFFB300),
-                                WePlayOrangePrimary,
-                                WePlayOrangeDark
+                                Color(0xFFE8FFFB),
+                                WePlayTealGlow,
+                                WePlayTealPrimary,
+                                WePlayTealDark
                             ),
                             center = Offset(cx, cy),
                             radius = cx * 0.35f
@@ -643,82 +724,94 @@ fun VinylAlbumCover(
                     drawRect(
                         brush = Brush.verticalGradient(
                             colors = listOf(
-                                Color(0xFF16082B),       // Deep Space Violet
-                                Color(0xFF4A154B),       // Sunset Nebula Magenta
-                                Color(0xFF8B2535),       // Warm Rose Horizon
-                                Color(0xFF261014)        // Valley Shadow
+                                Color(0xFF070B12),       // Deep Space Obsidian
+                                Color(0xFF0F1A28),       // Twilight Titanium
+                                Color(0xFF14303B),       // Cyan Nebula Horizon
+                                Color(0xFF0A131C)        // Deep Studio Floor Shadow
                             ),
                             startY = 0f,
                             endY = h
                         )
                     )
 
-                    // Massive Glowing Alien Moon / Planet
-                    val planetCenter = Offset(w * 0.42f, h * 0.32f)
-                    val planetRadius = w * 0.34f
+                    // Massive Luminous Acoustic Celestial Sphere (Electric Studio Teal)
+                    val planetCenter = Offset(w * 0.45f, h * 0.36f)
+                    val planetRadius = w * 0.30f
 
-                    // Planet corona
+                    // Atmospheric Corona
                     drawCircle(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                Color(0xFFFF7A00).copy(alpha = 0.45f),
+                                WePlayTealGlow.copy(alpha = 0.45f),
+                                WePlayTealPrimary.copy(alpha = 0.15f),
                                 Color.Transparent
                             ),
                             center = planetCenter,
-                            radius = planetRadius * 1.35f
+                            radius = planetRadius * 1.5f
                         )
                     )
 
-                    // Planet body
+                    // Sphere Body
                     drawCircle(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                Color(0xFFFFC078),
-                                Color(0xFFFF6A3D),
-                                Color(0xFF531238),
-                                Color(0xFF1E0824)
+                                Color(0xFFFFFFFF),       // Specular glint
+                                Color(0xFFE8FFFB),       // Luminous ice teal
+                                WePlayTealGlow,          // Cyan corona
+                                WePlayTealPrimary,       // Electric studio teal
+                                WePlayTealDark,          // Deep shadow
+                                Color(0xFF041916)        // Edge
                             ),
-                            center = Offset(planetCenter.x - planetRadius * 0.3f, planetCenter.y - planetRadius * 0.2f),
+                            center = Offset(planetCenter.x - planetRadius * 0.3f, planetCenter.y - planetRadius * 0.3f),
                             radius = planetRadius
                         ),
                         radius = planetRadius,
                         center = planetCenter
                     )
 
-                    // Planet Ring
-                    rotate(degrees = -25f, pivot = planetCenter) {
+                    // Acoustic Wavefront Ring
+                    rotate(degrees = -20f, pivot = planetCenter) {
                         drawOval(
-                            color = Color(0xFFFFC078).copy(alpha = 0.65f),
-                            topLeft = Offset(planetCenter.x - planetRadius * 1.4f, planetCenter.y - planetRadius * 0.25f),
-                            size = Size(planetRadius * 2.8f, planetRadius * 0.5f),
-                            style = Stroke(width = 2.dp.toPx())
+                            brush = Brush.horizontalGradient(
+                                listOf(Color.Transparent, WePlayTealGlow, Color(0xFFE8FFFB), Color.Transparent)
+                            ),
+                            topLeft = Offset(planetCenter.x - planetRadius * 1.5f, planetCenter.y - planetRadius * 0.28f),
+                            size = Size(planetRadius * 3.0f, planetRadius * 0.56f),
+                            style = Stroke(width = 1.8.dp.toPx())
                         )
                     }
 
-                    // Jagged Craggy Mountain Ridge Silhouettes
-                    val mountainPath = Path().apply {
+                    // Harmonic Frequency Horizon Ridges
+                    val horizonPath = Path().apply {
                         moveTo(0f, h)
                         lineTo(0f, h * 0.72f)
-                        lineTo(w * 0.18f, h * 0.62f)
-                        lineTo(w * 0.34f, h * 0.74f)
-                        lineTo(w * 0.52f, h * 0.55f)
-                        lineTo(w * 0.68f, h * 0.70f)
-                        lineTo(w * 0.85f, h * 0.58f)
-                        lineTo(w, h * 0.68f)
+                        cubicTo(w * 0.25f, h * 0.60f, w * 0.45f, h * 0.82f, w * 0.70f, h * 0.65f)
+                        lineTo(w, h * 0.70f)
                         lineTo(w, h)
                         close()
                     }
                     drawPath(
-                        path = mountainPath,
+                        path = horizonPath,
                         brush = Brush.verticalGradient(
                             colors = listOf(
-                                Color(0xFF1C0D26),
-                                Color(0xFF09040D)
+                                Color(0xFF0F1E28),
+                                Color(0xFF070D14)
                             ),
-                            startY = h * 0.55f,
+                            startY = h * 0.60f,
                             endY = h
                         )
                     )
+
+                    // Studio Precision Grid Lines on Lower Third
+                    for (step in 1..4) {
+                        val ly = h * 0.74f + step * 8.dp.toPx()
+                        drawLine(
+                            color = Color(0xFF1E3040).copy(alpha = 0.35f),
+                            start = Offset(0f, ly),
+                            end = Offset(w, ly),
+                            strokeWidth = 1.dp.toPx()
+                        )
+                    }
 
                     // Sleeve Subtle Edge Gloss
                     drawLine(
@@ -918,115 +1011,112 @@ fun PenthouseSunsetOrb(
             val w = this.size.width
             val h = this.size.height
 
-            // 1. Floor-to-ceiling Sunset Sky Horizon
+            // 1. Architectural Studio Atmosphere (Deep Obsidian to Horizon Gradient)
             drawRect(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF0F0B1E),       // Twilight Space
-                        Color(0xFF381432),       // Violet Sunset
-                        Color(0xFF9E3D22),       // Golden Twilight Horizon
-                        Color(0xFFFF7A00).copy(alpha = 0.85f), // Sunset Glow
-                        Color(0xFF14080A)        // Penthouse Floor Shadow
+                        Color(0xFF06090E),       // Pure Void Space
+                        Color(0xFF0C131D),       // Milled Charcoal Titanium
+                        Color(0xFF13222E),       // Acoustic Studio Horizon
+                        Color(0xFF09141A),       // Floor Specular Basin
+                        Color(0xFF05080D)        // Foreground Chassis
                     ),
                     startY = 0f,
                     endY = h
                 )
             )
 
-            // 2. Window Mullions & City Skyline Silhouette
-            val windowW = w * 0.33f
-            drawLine(
-                color = Color(0xFF1E1724),
-                start = Offset(windowW, 0f),
-                end = Offset(windowW, h * 0.75f),
-                strokeWidth = 3.dp.toPx()
-            )
-            drawLine(
-                color = Color(0xFF1E1724),
-                start = Offset(windowW * 2f, 0f),
-                end = Offset(windowW * 2f, h * 0.75f),
-                strokeWidth = 3.dp.toPx()
-            )
+            // 2. Vertical Acoustic Diffuser Baffle Fins (Studio Architecture)
+            val finCount = 18
+            val finSpacing = w / finCount
+            for (i in 0 until finCount) {
+                val finX = i * finSpacing
+                val distCenter = kotlin.math.abs(finX - w * 0.5f) / (w * 0.5f)
+                val finH = h * 0.55f * (0.5f + 0.5f * distCenter)
+                val finAlpha = 0.15f + 0.12f * (1f - distCenter)
 
-            // City Skyline Buildings (Subtle silhouettes on horizon)
-            val skylineTop = h * 0.52f
-            drawRect(
-                color = Color(0xFF1A0A14),
-                topLeft = Offset(w * 0.08f, skylineTop - 25.dp.toPx()),
-                size = Size(18.dp.toPx(), 45.dp.toPx())
-            )
-            drawRect(
-                color = Color(0xFF1A0A14),
-                topLeft = Offset(w * 0.22f, skylineTop - 40.dp.toPx()),
-                size = Size(26.dp.toPx(), 60.dp.toPx())
-            )
-            drawRect(
-                color = Color(0xFF1A0A14),
-                topLeft = Offset(w * 0.72f, skylineTop - 35.dp.toPx()),
-                size = Size(22.dp.toPx(), 55.dp.toPx())
-            )
-
-            // 3. Penthouse Living Room Interior: Low Modern Couch & Coffee Table
-            val couchY = h * 0.68f
-            drawRoundRect(
-                color = Color(0xFF181B24),
-                topLeft = Offset(w * 0.12f, couchY),
-                size = Size(w * 0.76f, 32.dp.toPx()),
-                cornerRadius = CornerRadius(6.dp.toPx(), 6.dp.toPx())
-            )
-
-            // House Plant Silhouette (Right corner)
-            drawCircle(
-                color = Color(0xFF10141D),
-                radius = 28.dp.toPx(),
-                center = Offset(w * 0.88f, couchY + 10.dp.toPx())
-            )
-
-            // 4. Floating Incandescent Acoustic Orb with Radiating Circular Wavefronts
-            val orbCenter = Offset(w * 0.5f, h * 0.42f)
-            val baseRadius = 26.dp.toPx() * pulse
-
-            // Radiating Concentric Wavefront Rings
-            val waveRadii = listOf(baseRadius * 1.8f, baseRadius * 2.8f, baseRadius * 3.8f, baseRadius * 5.0f)
-            waveRadii.forEachIndexed { i, r ->
-                val waveAlpha = (0.45f - i * 0.09f).coerceAtLeast(0.08f)
+                drawLine(
+                    color = Color(0xFF1E2D3E).copy(alpha = finAlpha),
+                    start = Offset(finX, 0f),
+                    end = Offset(finX, finH),
+                    strokeWidth = 1.5.dp.toPx()
+                )
+                // Subtle illuminated chamfer base
                 drawCircle(
-                    color = WePlayOrangeGlow.copy(alpha = waveAlpha),
+                    color = WePlayTealGlow.copy(alpha = 0.25f * (1f - distCenter)),
+                    radius = 1.dp.toPx(),
+                    center = Offset(finX, finH)
+                )
+            }
+
+            // 3. Precision Perspective Floor Grid (Studio Ground Stage)
+            val floorTop = h * 0.58f
+            for (step in 1..6) {
+                val lineY = floorTop + (h - floorTop) * (step / 6f) * (step / 6f)
+                val lineAlpha = 0.12f + 0.15f * (step / 6f)
+                drawLine(
+                    color = Color(0xFF1C2C3D).copy(alpha = lineAlpha),
+                    start = Offset(0f, lineY),
+                    end = Offset(w, lineY),
+                    strokeWidth = 1.dp.toPx()
+                )
+            }
+
+            // 4. Central Monolithic Floating Acoustic Resonator Orb
+            val orbCenter = Offset(w * 0.5f, h * 0.40f)
+            val baseRadius = 32.dp.toPx() * pulse
+
+            // Radiating Concentric Wavefront Rings (Harmonic Audio Expansion)
+            val waveRadii = listOf(baseRadius * 1.6f, baseRadius * 2.5f, baseRadius * 3.6f, baseRadius * 4.8f)
+            waveRadii.forEachIndexed { i, r ->
+                val waveAlpha = (0.42f - i * 0.09f).coerceAtLeast(0.06f)
+                drawCircle(
+                    color = WePlayTealGlow.copy(alpha = waveAlpha),
                     radius = r,
                     center = orbCenter,
                     style = Stroke(width = 1.2.dp.toPx())
                 )
             }
 
-            // Warm Volumetric Ambient Floor Glow
+            // Volumetric Ambient Floor Specular Pool
             drawOval(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        WePlayOrangePrimary.copy(alpha = 0.45f),
+                        WePlayTealPrimary.copy(alpha = 0.40f),
+                        WePlayTealDark.copy(alpha = 0.15f),
                         Color.Transparent
                     ),
-                    center = Offset(orbCenter.x, couchY - 10.dp.toPx()),
-                    radius = w * 0.38f
+                    center = Offset(orbCenter.x, floorTop + 24.dp.toPx()),
+                    radius = w * 0.42f
                 ),
-                topLeft = Offset(orbCenter.x - w * 0.38f, couchY - 30.dp.toPx()),
-                size = Size(w * 0.76f, 40.dp.toPx())
+                topLeft = Offset(orbCenter.x - w * 0.42f, floorTop),
+                size = Size(w * 0.84f, 48.dp.toPx())
             )
 
-            // Core Orb Body
+            // Core Acoustic Resonator Sphere (Signature #21CDB8 Electric Studio Teal)
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        Color(0xFFFFF6DD),           // Hot White Core
-                        Color(0xFFFFB300),           // Solar Gold
-                        WePlayOrangePrimary,         // Molten Orange
-                        Color(0xFFC03600),           // Deep Rim
-                        Color(0xFF380800)            // Shadow
+                        Color(0xFFFFFFFF),           // Crisp Specular Glint
+                        Color(0xFFE8FFFB),           // Crystalline Ice-Teal
+                        WePlayTealGlow,              // Peak Corona Glow (#3DE8D2)
+                        WePlayTealPrimary,           // Electric Studio Teal (#21CDB8)
+                        WePlayTealDark,              // Metallic Shadow
+                        Color(0xFF041815)            // Obsidian Rim
                     ),
-                    center = Offset(orbCenter.x - baseRadius * 0.25f, orbCenter.y - baseRadius * 0.25f),
+                    center = Offset(orbCenter.x - baseRadius * 0.28f, orbCenter.y - baseRadius * 0.32f),
                     radius = baseRadius
                 ),
                 radius = baseRadius,
                 center = orbCenter
+            )
+
+            // Equator Precision Filament Ring
+            drawOval(
+                color = Color.White.copy(alpha = 0.5f),
+                topLeft = Offset(orbCenter.x - baseRadius * 1.2f, orbCenter.y - baseRadius * 0.25f),
+                size = Size(baseRadius * 2.4f, baseRadius * 0.5f),
+                style = Stroke(width = 1.dp.toPx())
             )
         }
     }
@@ -1050,7 +1140,7 @@ fun FlowingCopperRibbon(
         val w = this.size.width
         val h = this.size.height
 
-        // Ribbon Layer 1: Ambient copper haze
+        // Ribbon Layer 1: Ambient teal haze
         val hazePath = Path().apply {
             moveTo(0f, h * 0.65f)
             cubicTo(w * 0.35f, h * 0.15f, w * 0.65f, h * 0.95f, w, h * 0.45f)
@@ -1062,8 +1152,8 @@ fun FlowingCopperRibbon(
             path = hazePath,
             brush = Brush.verticalGradient(
                 colors = listOf(
-                    Color(0xFFFF7A00).copy(alpha = 0.25f),
-                    Color(0xFF8B3A00).copy(alpha = 0.10f),
+                    WePlayTealPrimary.copy(alpha = 0.22f),
+                    WePlayTealDark.copy(alpha = 0.08f),
                     Color.Transparent
                 ),
                 startY = 0f,
@@ -1071,7 +1161,7 @@ fun FlowingCopperRibbon(
             )
         )
 
-        // Ribbon Layer 2: Main metallic ribbon spline
+        // Ribbon Layer 2: Main metallic electric-teal ribbon spline
         val ribbonPath = Path().apply {
             moveTo(0f, h * 0.75f)
             cubicTo(w * 0.28f, h * 0.32f, w * 0.68f, h * 0.88f, w, h * 0.52f)
@@ -1080,17 +1170,17 @@ fun FlowingCopperRibbon(
             path = ribbonPath,
             brush = Brush.horizontalGradient(
                 colors = listOf(
-                    Color(0xFF8B4513),
-                    Color(0xFFFFB300),
-                    WePlayOrangePrimary,
-                    Color(0xFFFF7A00),
-                    Color(0xFFB85E00)
+                    Color(0xFF0C4D44),
+                    Color(0xFF168375),
+                    WePlayTealPrimary,
+                    WePlayTealGlow,
+                    Color(0xFF1AA392)
                 )
             ),
             style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
         )
 
-        // Ribbon Layer 3: Secondary parallel filament
+        // Ribbon Layer 3: Secondary parallel cyan filament
         val ribbonPath2 = Path().apply {
             moveTo(0f, h * 0.82f)
             cubicTo(w * 0.32f, h * 0.42f, w * 0.72f, h * 0.94f, w, h * 0.60f)
@@ -1099,11 +1189,11 @@ fun FlowingCopperRibbon(
             path = ribbonPath2,
             brush = Brush.horizontalGradient(
                 colors = listOf(
-                    Color(0xFF5C2600),
-                    Color(0xFFFF8C00),
-                    Color(0xFFFFE082),
-                    WePlayOrangePrimary,
-                    Color(0xFF7A3200)
+                    Color(0xFF08332D),
+                    Color(0xFF1AA392),
+                    Color(0xFFE0FFF9),
+                    WePlayTealPrimary,
+                    Color(0xFF0C5248)
                 )
             ),
             style = Stroke(width = 1.6.dp.toPx(), cap = StrokeCap.Round)

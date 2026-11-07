@@ -1,5 +1,12 @@
 package com.weplay.sync.ui.screens
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,6 +26,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,19 +40,26 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.weplay.sync.shared.model.AudioSharingSession
-import com.weplay.sync.ui.components.IsometricSpectrumCube
+import com.weplay.sync.shared.model.DeviceType
+import com.weplay.sync.ui.components.RealQRCode
 import com.weplay.sync.ui.components.WePlayIcon
 import com.weplay.sync.ui.components.WePlayIconType
-import com.weplay.sync.ui.components.WePlayStreamQRCode
 import com.weplay.sync.ui.theme.WePlayBorder
 import com.weplay.sync.ui.theme.WePlayBorderSubtle
 import com.weplay.sync.ui.theme.WePlayObsidian
+import com.weplay.sync.ui.theme.WePlayOrangeDark
+import com.weplay.sync.ui.theme.WePlayOrangeGlow
+import com.weplay.sync.ui.theme.WePlayOrangePrimary
 import com.weplay.sync.ui.theme.WePlayStatusGreen
 import com.weplay.sync.ui.theme.WePlayStatusRed
 import com.weplay.sync.ui.theme.WePlaySurface
@@ -51,13 +69,13 @@ import com.weplay.sync.ui.theme.WePlayTextSecondary
 import kotlinx.coroutines.delay
 
 /**
- * Screen 3: Master Active Broadcast Screen ("Broadcasting...").
- * Exact visual match to Screen 3 in the design reference:
- * - Top Bar: "● LIVE" pill badge + "00:12:48" timer
+ * Screen 4: Master Active Broadcast Screen ("Broadcasting...").
+ * Exact visual match to Screen 4 in the design reference:
+ * - Top Bar: Back arrow + "● LIVE" pill badge + "00:00:00" elapsed timer + diagnostics info icon
  * - Isometric 3D glass cube with animated amber frequency spectrum bars inside
- * - Status header: "Broadcasting..." + "Audio is being shared to 3 devices"
- * - Split card: Monospace Session PIN ("WP-4829") + High-contrast QR Code
- * - Horizontal connected device pods: AirPods, Studio Pro, Living Room
+ * - Status header: "Broadcasting..." + live device count
+ * - Split card: Monospace Session PIN ("WP-XXXX") + High-contrast Genuine Scannable QR Code
+ * - Dynamic connected companion devices row (shows real connected listeners)
  * - Full-width dark glass pill: "■ End Broadcast"
  */
 @Composable
@@ -70,8 +88,8 @@ fun LiveSessionHostScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Simulated timer for broadcasting elapsed time
-    var secondsElapsed by remember { mutableIntStateOf(768) } // 12m 48s as in reference
+    // Real elapsed session timer
+    var secondsElapsed by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
         while (true) {
             delay(1000)
@@ -97,7 +115,7 @@ fun LiveSessionHostScreen(
                 .padding(bottom = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 1. Top Bar: "● LIVE" Badge & Elapsed Timer
+            // 1. Top Bar: Back Arrow, "● LIVE" Badge, Elapsed Timer, Diagnostics
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -105,6 +123,15 @@ fun LiveSessionHostScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = WePlayTextPrimary,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable { onBack() }
+                )
+
                 // Red LIVE pill badge
                 Box(
                     modifier = Modifier
@@ -141,6 +168,15 @@ fun LiveSessionHostScreen(
                     color = WePlayTextPrimary,
                     letterSpacing = 0.5.sp
                 )
+
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = "Diagnostics",
+                    tint = WePlayTextSecondary,
+                    modifier = Modifier
+                        .size(22.dp)
+                        .clickable { onOpenDiagnostics() }
+                )
             }
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -165,15 +201,21 @@ fun LiveSessionHostScreen(
                 color = WePlayTextPrimary
             )
             Spacer(modifier = Modifier.height(4.dp))
+
+            val listenerCount = session.listeners.size
             Text(
-                text = "Audio is being shared to 3 devices",
+                text = if (listenerCount > 0) {
+                    "Audio is being shared to $listenerCount companion device${if (listenerCount == 1) "" else "s"}"
+                } else {
+                    "Waiting for companion listeners to connect"
+                },
                 fontSize = 13.sp,
                 color = WePlayTextSecondary
             )
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // 4. Session Info Split Card (PIN on Left, QR Code on Right)
+            // 4. Session Info Split Card (PIN on Left, 100% Genuine QR Code on Right)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -204,9 +246,15 @@ fun LiveSessionHostScreen(
                             color = WePlayTextPrimary,
                             letterSpacing = 1.sp
                         )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "LPCM 48kHz Stereo",
+                            fontSize = 10.sp,
+                            color = WePlayOrangeGlow
+                        )
                     }
 
-                    // Right half: High-contrast QR Code
+                    // Right half: Genuine ISO/IEC 18004 Scannable QR Code
                     Box(
                         modifier = Modifier
                             .size(76.dp)
@@ -215,64 +263,102 @@ fun LiveSessionHostScreen(
                             .padding(4.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        WePlayStreamQRCode(sessionCode = session.sessionCode.ifEmpty { "WP-4829" })
+                        RealQRCode(
+                            content = "weplay://join?code=${session.sessionCode.ifEmpty { "WP-4829" }}",
+                            size = 68.dp
+                        )
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // 5. Horizontal Connected Devices Row (AirPods, Studio Pro, Living Room)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 22.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                val mockDevices = listOf(
-                    Triple("AirPods", WePlayIconType.HEADPHONES, true),
-                    Triple("Studio Pro", WePlayIconType.SPEAKER, true),
-                    Triple("Living Room", WePlayIconType.ROOM, true)
-                )
+            // 5. Dynamic Connected Devices Display
+            if (session.listeners.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 22.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    session.listeners.forEach { listener ->
+                        val iconType = when (listener.deviceType) {
+                            DeviceType.HEADPHONES -> WePlayIconType.HEADPHONES
+                            else -> WePlayIconType.SPEAKER
+                        }
 
-                mockDevices.forEach { (name, iconType, isConnected) ->
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(WePlaySurface)
-                            .border(1.dp, WePlayBorderSubtle, RoundedCornerShape(14.dp))
-                            .padding(vertical = 12.dp, horizontal = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(WePlaySurface)
+                                .border(1.dp, WePlayBorderSubtle, RoundedCornerShape(14.dp))
+                                .padding(vertical = 12.dp, horizontal = 8.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(WePlaySurfaceElevated),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                WePlayIcon(
-                                    type = iconType,
-                                    tint = WePlayTextPrimary,
-                                    size = 18.dp
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(WePlaySurfaceElevated),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    WePlayIcon(
+                                        type = iconType,
+                                        tint = WePlayTextPrimary,
+                                        size = 18.dp
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = listener.name,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = WePlayTextPrimary,
+                                    maxLines = 1
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "${listener.rttMs.toInt()} ms sync",
+                                    fontSize = 10.sp,
+                                    color = WePlayStatusGreen
                                 )
                             }
-                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                    }
+                }
+            } else {
+                // Honest waiting state card
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 22.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(WePlaySurface)
+                        .border(1.dp, WePlayBorderSubtle, RoundedCornerShape(14.dp))
+                        .padding(16.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        WePlayIcon(
+                            type = WePlayIconType.ROUTE,
+                            tint = WePlayOrangeGlow,
+                            size = 22.dp
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
                             Text(
-                                text = name,
-                                fontSize = 12.sp,
+                                text = "Ready to Sync Companion Devices",
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = WePlayTextPrimary
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Connected",
-                                fontSize = 10.sp,
-                                color = WePlayStatusGreen
+                                text = "Open WePlay on companion phones, tablets or PCs on the same Wi-Fi network and scan the QR code to listen synchronously.",
+                                fontSize = 11.sp,
+                                color = WePlayTextSecondary,
+                                lineHeight = 15.sp
                             )
                         }
                     }
@@ -309,6 +395,104 @@ fun LiveSessionHostScreen(
                     )
                 }
             }
+        }
+    }
+}
+
+/**
+ * 3D Isometric Spectrum Glass Cube with amber audio frequency bars inside.
+ */
+@Composable
+private fun IsometricSpectrumCube(size: androidx.compose.ui.unit.Dp) {
+    val infiniteTransition = rememberInfiniteTransition(label = "cubeTransition")
+    val phase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 6.283f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2400, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "cubePhase"
+    )
+
+    Canvas(modifier = Modifier.size(size)) {
+        val w = this.size.width
+        val h = this.size.height
+        val cx = w / 2f
+        val cy = h / 2f
+
+        val r = w * 0.38f
+        val cos30 = 0.866f
+        val sin30 = 0.5f
+
+        val topPoint = Offset(cx, cy - r)
+        val rightPoint = Offset(cx + r * cos30, cy - r * sin30)
+        val botRightPoint = Offset(cx + r * cos30, cy + r * sin30)
+        val bottomPoint = Offset(cx, cy + r)
+        val botLeftPoint = Offset(cx - r * cos30, cy + r * sin30)
+        val leftPoint = Offset(cx - r * cos30, cy - r * sin30)
+        val center = Offset(cx, cy)
+
+        val neonEdgeColor = Color(0xFF2B4C7E)
+        val edgeStroke = Stroke(width = 1.5.dp.toPx())
+
+        // Top Face
+        val topPath = Path().apply {
+            moveTo(center.x, center.y)
+            lineTo(rightPoint.x, rightPoint.y)
+            lineTo(topPoint.x, topPoint.y)
+            lineTo(leftPoint.x, leftPoint.y)
+            close()
+        }
+        drawPath(topPath, brush = Brush.linearGradient(listOf(Color(0xFF0F1A2C).copy(alpha = 0.5f), Color(0xFF06090F).copy(alpha = 0.7f))))
+        drawPath(topPath, color = neonEdgeColor.copy(alpha = 0.6f), style = edgeStroke)
+
+        // Left Face
+        val leftPath = Path().apply {
+            moveTo(center.x, center.y)
+            lineTo(leftPoint.x, leftPoint.y)
+            lineTo(botLeftPoint.x, botLeftPoint.y)
+            lineTo(bottomPoint.x, bottomPoint.y)
+            close()
+        }
+        drawPath(leftPath, brush = Brush.linearGradient(listOf(Color(0xFF0B1424).copy(alpha = 0.6f), Color(0xFF05080E).copy(alpha = 0.8f))))
+        drawPath(leftPath, color = neonEdgeColor.copy(alpha = 0.6f), style = edgeStroke)
+
+        // Right Face
+        val rightPath = Path().apply {
+            moveTo(center.x, center.y)
+            lineTo(rightPoint.x, rightPoint.y)
+            lineTo(botRightPoint.x, botRightPoint.y)
+            lineTo(bottomPoint.x, bottomPoint.y)
+            close()
+        }
+        drawPath(rightPath, brush = Brush.linearGradient(listOf(Color(0xFF0D1728).copy(alpha = 0.55f), Color(0xFF05080E).copy(alpha = 0.8f))))
+        drawPath(rightPath, color = neonEdgeColor.copy(alpha = 0.6f), style = edgeStroke)
+
+        // Internal Animated Amber Spectrum Peak
+        val barCount = 14
+        val spectrumWidth = r * 0.9f
+        val barStep = spectrumWidth / barCount
+
+        for (i in 0 until barCount) {
+            val barPhase = phase + (i * 0.45f)
+            val bellCurve = 1.0f - kotlin.math.abs((i - barCount / 2f) / (barCount / 2f))
+            val heightFrac = (0.3f + 0.7f * kotlin.math.abs(kotlin.math.sin(barPhase))) * bellCurve
+            val barHeight = r * 0.95f * heightFrac
+
+            val x = (center.x - spectrumWidth / 2f) + (i * barStep)
+            val yBase = center.y + 10.dp.toPx()
+
+            drawLine(
+                brush = Brush.verticalGradient(
+                    colors = listOf(WePlayOrangeGlow, WePlayOrangeDark),
+                    startY = yBase - barHeight,
+                    endY = yBase
+                ),
+                start = Offset(x, yBase),
+                end = Offset(x, yBase - barHeight),
+                strokeWidth = 3.dp.toPx()
+            )
         }
     }
 }

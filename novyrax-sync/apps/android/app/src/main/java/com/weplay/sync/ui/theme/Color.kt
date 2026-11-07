@@ -3,63 +3,71 @@ package com.weplay.sync.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // =========================================================================
-// WEPLAY MASTER CINEMATIC DESIGN SYSTEM — PRIMARY VISUAL TOKENS
+// WEPLAY MASTER CLASS DESIGN SYSTEM — BRAND ICON ALIGNED COLOR TOKENS
+// Primary Brand Color: #21CDB8 (WePlay Electric Teal / Studio Cyan)
+// Luxury Hi-Fi Dark Architecture: Bang & Olufsen / Teenage Engineering
 // =========================================================================
 
-// Deep Cosmic Ground & Glass Foundations
-val WePlayObsidian = Color(0xFF06080C)          // Deepest Space Obsidian Canvas
-val WePlaySurface = Color(0xFF0E121A)           // Frosted Glass Chassis Card
-val WePlaySurfaceElevated = Color(0xFF141A26)   // Recessed Pod / Input Surface
-val WePlayBorder = Color(0xFF1E2638)            // Glass Chamfer Edge Border
-val WePlayBorderSubtle = Color(0xFF161E2E)      // Subtle Structural Grid Line
+// Deep Obsidian Ground & Milled Metal Chassis
+val WePlayObsidian = Color(0xFF080B10)          // Deep Space Obsidian Canvas
+val WePlaySurface = Color(0xFF0F141C)           // Frosted Glass & Anodized Chassis
+val WePlaySurfaceElevated = Color(0xFF151D28)   // Recessed Pod / Milled Tray Surface
+val WePlayBorder = Color(0xFF1F2B3A)            // Precision Chamfer Edge Border
+val WePlayBorderSubtle = Color(0xFF16202C)      // Structural Micro-Grid Line
 
-// Radiant Molten Solar Accent System
-val WePlayOrangePrimary = Color(0xFFFF5500)     // Radiant Molten Core Action
-val WePlayOrangeGlow = Color(0xFFFF7A00)        // Warm Amber Corona Glow
-val WePlayOrangeDark = Color(0xFFCC4400)        // Deep Molten Shadow
-val WePlayOrangeSubtle = Color(0x28FF5500)      // Diffuse Radial Ambient Glow
+// Signature Brand Accent System (Icon #21CDB8)
+val WePlayTealPrimary = Color(0xFF21CDB8)       // Icon Primary Electric Teal Accent
+val WePlayTealGlow = Color(0xFF3DE8D2)          // Luminous Cyan Peak Corona Glow
+val WePlayTealDark = Color(0xFF107A6D)          // Deep Metallic Precision Shadow
+val WePlayTealSubtle = Color(0x2221CDB8)        // Diffuse Volumetric Ambient Halo
+
+// Aliases mapped directly to #21CDB8 to maintain 100% theme consistency
+val WePlayOrangePrimary = WePlayTealPrimary
+val WePlayOrangeGlow = WePlayTealGlow
+val WePlayOrangeDark = WePlayTealDark
+val WePlayOrangeSubtle = WePlayTealSubtle
 
 // Electric Connectivity Accent System
-val WePlayElectricBlue = Color(0xFF2E7CF6)      // Sonar Radar / Network Node
-val WePlayElectricCyan = Color(0xFF38B6FF)      // PTP Phase Lock / Ray
-val WePlayElectricBlueSubtle = Color(0x282E7CF6)
+val WePlayElectricBlue = Color(0xFF21CDB8)      // Unified Brand Radar & Nodes
+val WePlayElectricCyan = Color(0xFF3DE8D2)      // PTP Phase Lock / Ray
+val WePlayElectricBlueSubtle = Color(0x2421CDB8)
 
 // Hi-Fi Telemetry & Signal Enamel
-val WePlayStatusGreen = Color(0xFF00E676)       // Connected / dB Level Meter
-val WePlayStatusRed = Color(0xFFFF334B)         // LIVE Broadcast / Critical Stop
-val WePlayStatusAmber = Color(0xFFFFB300)       // Hi-Res Audio / Buffer Depth
+val WePlayStatusGreen = Color(0xFF21CDB8)       // Verified Connection / Sync Locked
+val WePlayStatusRed = Color(0xFFFF3B56)         // LIVE Broadcast / Critical Stop
+val WePlayStatusAmber = Color(0xFFFFB300)       // Hi-Res Audio / Buffer Alert
 
 // High-Contrast Typographic Enamel
 val WePlayTextPrimary = Color(0xFFFFFFFF)       // Crisp White Milled Typography
-val WePlayTextSecondary = Color(0xFF8B95A5)     // Subdued Studio Label
-val WePlayTextMuted = Color(0xFF5A6475)         // Technical Telemetry Annotations
+val WePlayTextSecondary = Color(0xFF8E9BAE)     // Subdued Studio Slate Label
+val WePlayTextMuted = Color(0xFF546477)         // Technical Telemetry Annotations
 
-// Backward Compatibility Aliases for Atelier / Instrumentarium references
+// Atelier / Instrumentarium Compatibility Aliases
 val AtelierObsidian = WePlayObsidian
 val AtelierGunmetal = WePlaySurface
 val AtelierTray = WePlaySurfaceElevated
 val AtelierChamfer = WePlayBorder
 val AtelierTextPrimary = WePlayTextPrimary
 val AtelierTextSecondary = WePlayTextSecondary
-val SignalVermilion = WePlayOrangePrimary
-val SignalVermilionSubtle = WePlayOrangeSubtle
+val SignalVermilion = WePlayTealPrimary
+val SignalVermilionSubtle = WePlayTealSubtle
 val ElectricCobalt = WePlayElectricBlue
 val ElectricCobaltSubtle = WePlayElectricBlueSubtle
 val CalibratedGold = WePlayStatusAmber
 val CalibratedGoldSubtle = Color(0x24FFB300)
-val PrecisionCyan = WePlayStatusGreen
-val PrecisionCyanSubtle = Color(0x2400E676)
+val PrecisionCyan = WePlayTealPrimary
+val PrecisionCyanSubtle = WePlayTealSubtle
 val HardwareBarred = WePlayStatusRed
 
-// Light Palette (Technical Studio Drafting Mode)
-val CanvasLight = Color(0xFFF0EDE5)
-val SurfaceLight = Color(0xFFFAF8F5)
-val SurfaceSubtleLight = Color(0xFFE5E1D8)
-val TextPrimaryLight = Color(0xFF0D1117)
-val TextSecondaryLight = Color(0xFF6B7280)
-val SeparatorLight = Color(0xFFD1CBC0)
+// Light Palette (Drafting / High Ambient Light Mode)
+val CanvasLight = Color(0xFFF2F4F8)
+val SurfaceLight = Color(0xFFFFFFFF)
+val SurfaceSubtleLight = Color(0xFFE8ECF2)
+val TextPrimaryLight = Color(0xFF0A0E14)
+val TextSecondaryLight = Color(0xFF5F6E80)
+val SeparatorLight = Color(0xFFD3DAE4)
 
-// Dark Palette (Cinematic Mode)
+// Dark Palette
 val CanvasDark = WePlayObsidian
 val SurfaceDark = WePlaySurface
 val SurfaceSubtleDark = WePlaySurfaceElevated
@@ -97,19 +105,19 @@ val LightPalette = WePlayColorPalette(
     textPrimary = TextPrimaryLight,
     textSecondary = TextSecondaryLight,
     separator = SeparatorLight,
-    accent = WePlayOrangePrimary,
-    accentSubtle = WePlayOrangeSubtle,
-    signalVermilion = WePlayOrangePrimary,
+    accent = WePlayTealPrimary,
+    accentSubtle = WePlayTealSubtle,
+    signalVermilion = WePlayTealPrimary,
     electricCobalt = WePlayElectricBlue,
     calibratedGold = WePlayStatusAmber,
-    precisionCyan = WePlayStatusGreen,
-    coral = WePlayOrangePrimary,
-    blue = WePlayElectricBlue,
-    lavender = Color(0xFF8B7CF6),
+    precisionCyan = WePlayTealPrimary,
+    coral = Color(0xFF21CDB8),
+    blue = Color(0xFF1B8A7C),
+    lavender = Color(0xFF264052),
     gold = WePlayStatusAmber,
-    warning = Color(0xFFF59E0B),
+    warning = Color(0xFFE5A100),
     error = WePlayStatusRed,
-    success = WePlayStatusGreen,
+    success = WePlayTealPrimary,
     isDark = false
 )
 
@@ -120,18 +128,18 @@ val DarkPalette = WePlayColorPalette(
     textPrimary = TextPrimaryDark,
     textSecondary = TextSecondaryDark,
     separator = SeparatorDark,
-    accent = WePlayOrangePrimary,
-    accentSubtle = WePlayOrangeSubtle,
-    signalVermilion = WePlayOrangePrimary,
+    accent = WePlayTealPrimary,
+    accentSubtle = WePlayTealSubtle,
+    signalVermilion = WePlayTealPrimary,
     electricCobalt = WePlayElectricBlue,
     calibratedGold = WePlayStatusAmber,
-    precisionCyan = WePlayStatusGreen,
-    coral = WePlayOrangePrimary,
-    blue = WePlayElectricBlue,
-    lavender = Color(0xFF8B7CF6),
+    precisionCyan = WePlayTealPrimary,
+    coral = Color(0xFF21CDB8),
+    blue = Color(0xFF3DE8D2),
+    lavender = Color(0xFF1A3342),
     gold = WePlayStatusAmber,
-    warning = Color(0xFFF59E0B),
+    warning = WePlayStatusAmber,
     error = WePlayStatusRed,
-    success = WePlayStatusGreen,
+    success = WePlayTealPrimary,
     isDark = true
 )

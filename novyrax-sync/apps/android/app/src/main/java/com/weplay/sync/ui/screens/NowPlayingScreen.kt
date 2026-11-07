@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -30,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -40,6 +42,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
@@ -55,6 +58,9 @@ import com.weplay.sync.ui.theme.WePlayOrangeDark
 import com.weplay.sync.ui.theme.WePlayOrangeGlow
 import com.weplay.sync.ui.theme.WePlayOrangePrimary
 import com.weplay.sync.ui.theme.WePlaySurface
+import com.weplay.sync.ui.theme.WePlayTealDark
+import com.weplay.sync.ui.theme.WePlayTealGlow
+import com.weplay.sync.ui.theme.WePlayTealPrimary
 import com.weplay.sync.ui.theme.WePlayTextMuted
 import com.weplay.sync.ui.theme.WePlayTextPrimary
 import com.weplay.sync.ui.theme.WePlayTextSecondary
@@ -94,7 +100,20 @@ fun NowPlayingScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var progressFraction by remember { mutableFloatStateOf(0.16f) } // 00:32 of 03:24
+    val duration = trackState.durationMs.coerceAtLeast(1000L)
+    val currentPos = trackState.currentPositionMs.coerceIn(0L, duration)
+    val progressFraction = (currentPos.toFloat() / duration.toFloat()).coerceIn(0f, 1f)
+
+    val curSec = (currentPos / 1000L)
+    val durSec = (duration / 1000L)
+    val curTimeStr = String.format("%02d:%02d", curSec / 60, curSec % 60)
+    val durTimeStr = String.format("%02d:%02d", durSec / 60, durSec % 60)
+
+    var showEqualizerModal by remember { mutableStateOf(false) }
+    var bassBoostFraction by remember { mutableFloatStateOf(0.55f) }
+    var spatializerFraction by remember { mutableFloatStateOf(0.70f) }
+    var selectedPreset by remember { mutableStateOf("Studio Ref") }
+    var eqGains by remember { mutableStateOf(floatArrayOf(2.5f, 1.0f, -0.5f, 1.5f, 3.0f)) }
 
     Box(
         modifier = modifier
@@ -180,11 +199,10 @@ fun NowPlayingScreen(
                         .fillMaxWidth()
                         .height(24.dp)
                         .onSizeChanged { barWidthPx = it.width.toFloat() }
-                        .pointerInput(Unit) {
+                        .pointerInput(duration) {
                             detectHorizontalDragGestures { change, _ ->
                                 val frac = (change.position.x / barWidthPx).coerceIn(0f, 1f)
-                                progressFraction = frac
-                                onSeek((frac * 204000L).toLong())
+                                onSeek((frac * duration).toLong())
                             }
                         },
                     contentAlignment = Alignment.CenterStart
@@ -229,12 +247,12 @@ fun NowPlayingScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "00:32",
+                        text = curTimeStr,
                         fontSize = 11.sp,
                         color = WePlayTextMuted
                     )
                     Text(
-                        text = "03:24",
+                        text = durTimeStr,
                         fontSize = 11.sp,
                         color = WePlayTextMuted
                     )
@@ -362,7 +380,7 @@ fun NowPlayingScreen(
                 QuickActionPill(
                     label = "Equalizer",
                     iconType = WePlayIconType.EQUALIZER,
-                    onClick = { /* trigger EQ */ },
+                    onClick = { showEqualizerModal = true },
                     modifier = Modifier.weight(1f)
                 )
                 QuickActionPill(
@@ -371,6 +389,221 @@ fun NowPlayingScreen(
                     onClick = onOpenOutputSelector,
                     modifier = Modifier.weight(1.1f)
                 )
+            }
+        }
+
+        // 7. Interactive 5-Band Studio Equalizer & Audio Enhancer Modal
+        if (showEqualizerModal) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.75f))
+                    .clickable { showEqualizerModal = false },
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                        .background(Color(0xFF0F1520))
+                        .border(1.dp, WePlayBorder, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                        .clickable(enabled = false) { }
+                        .padding(22.dp)
+                ) {
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = "STUDIO EQUALIZER",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = WePlayTextPrimary,
+                                    letterSpacing = 0.5.sp
+                                )
+                                Text(
+                                    text = "5-Band Precision Parametric DSP",
+                                    fontSize = 11.sp,
+                                    color = WePlayTealGlow
+                                )
+                            }
+                            Text(
+                                text = "DONE",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = WePlayTealPrimary,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(WePlayTealPrimary.copy(alpha = 0.15f))
+                                    .clickable { showEqualizerModal = false }
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Presets Row
+                        val presets = listOf("Studio Ref", "Deep Bass", "Vocal Clear", "Club 3D")
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            presets.forEach { preset ->
+                                val isSelected = selectedPreset == preset
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(if (isSelected) WePlayTealPrimary else Color(0xFF161E2C))
+                                        .border(1.dp, if (isSelected) WePlayTealGlow else WePlayBorder, RoundedCornerShape(8.dp))
+                                        .clickable {
+                                            selectedPreset = preset
+                                            eqGains = when (preset) {
+                                                "Deep Bass" -> floatArrayOf(6.0f, 4.0f, 0.0f, 1.0f, 2.0f)
+                                                "Vocal Clear" -> floatArrayOf(-1.0f, 0.5f, 3.5f, 4.0f, 2.0f)
+                                                "Club 3D" -> floatArrayOf(5.0f, 2.0f, -1.0f, 3.0f, 4.5f)
+                                                else -> floatArrayOf(0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
+                                            }
+                                        }
+                                        .padding(vertical = 8.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = preset,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (isSelected) Color.Black else WePlayTextPrimary
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(18.dp))
+
+                        // 5-Band Vertical Equalizer Bars
+                        val bandLabels = listOf("60 Hz", "230 Hz", "910 Hz", "3.6 kHz", "14 kHz")
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(120.dp),
+                            horizontalArrangement = Arrangement.SpaceAround
+                        ) {
+                            bandLabels.forEachIndexed { i, label ->
+                                val gain = eqGains[i]
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text(
+                                        text = if (gain >= 0) "+${String.format("%.1f", gain)}" else String.format("%.1f", gain),
+                                        fontSize = 10.sp,
+                                        color = WePlayTealGlow
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .width(28.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Canvas(modifier = Modifier.fillMaxSize()) {
+                                            val w = size.width
+                                            val h = size.height
+                                            val cy = h * 0.5f
+                                            // Vertical Slot
+                                            drawLine(
+                                                color = Color(0xFF1E2A3C),
+                                                start = Offset(w * 0.5f, 0f),
+                                                end = Offset(w * 0.5f, h),
+                                                strokeWidth = 3.dp.toPx(),
+                                                cap = StrokeCap.Round
+                                            )
+                                            // Center Zero Tick
+                                            drawLine(
+                                                color = Color.White.copy(alpha = 0.3f),
+                                                start = Offset(w * 0.2f, cy),
+                                                end = Offset(w * 0.8f, cy),
+                                                strokeWidth = 1.dp.toPx()
+                                            )
+                                            // Slider Thumb
+                                            val norm = ((gain + 12f) / 24f).coerceIn(0f, 1f)
+                                            val thumbY = h * (1f - norm)
+                                            drawCircle(
+                                                color = WePlayTealPrimary,
+                                                radius = 6.dp.toPx(),
+                                                center = Offset(w * 0.5f, thumbY)
+                                            )
+                                            drawCircle(
+                                                color = Color.White,
+                                                radius = 2.dp.toPx(),
+                                                center = Offset(w * 0.5f, thumbY)
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = label,
+                                        fontSize = 9.sp,
+                                        color = WePlayTextSecondary
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Bass Boost & 3D Spatializer Sliders
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(text = "Bass Boost (${(bassBoostFraction * 100).toInt()}%)", fontSize = 11.sp, color = WePlayTextSecondary)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(14.dp)
+                                        .clip(RoundedCornerShape(7.dp))
+                                        .background(Color(0xFF161E2C))
+                                        .clickable { bassBoostFraction = if (bassBoostFraction > 0.5f) 0.2f else 0.8f }
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxHeight()
+                                            .fillMaxWidth(bassBoostFraction)
+                                            .clip(RoundedCornerShape(7.dp))
+                                            .background(Brush.horizontalGradient(listOf(WePlayTealDark, WePlayTealPrimary)))
+                                    )
+                                }
+                            }
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(text = "3D Spatializer (${(spatializerFraction * 100).toInt()}%)", fontSize = 11.sp, color = WePlayTextSecondary)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(14.dp)
+                                        .clip(RoundedCornerShape(7.dp))
+                                        .background(Color(0xFF161E2C))
+                                        .clickable { spatializerFraction = if (spatializerFraction > 0.5f) 0.3f else 0.9f }
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxHeight()
+                                            .fillMaxWidth(spatializerFraction)
+                                            .clip(RoundedCornerShape(7.dp))
+                                            .background(Brush.horizontalGradient(listOf(WePlayTealDark, WePlayTealPrimary)))
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }

@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.weplay.sync.ui.components.WePlayBottomNav
 import com.weplay.sync.ui.components.WePlayIcon
 import com.weplay.sync.ui.components.WePlayIconType
 import com.weplay.sync.ui.theme.WePlayBorder
@@ -63,6 +64,7 @@ import com.weplay.sync.ui.theme.WePlayTextSecondary
 fun SettingsCompatibilityScreen(
     onOpenDiagnostics: () -> Unit,
     onBack: () -> Unit,
+    onNavigateToTab: (AppScreen) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -76,7 +78,7 @@ fun SettingsCompatibilityScreen(
                 .statusBarsPadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 22.dp, vertical = 14.dp)
-                .padding(bottom = 36.dp)
+                .padding(bottom = 90.dp)
         ) {
             // 1. Top Bar: "Settings" & Search Icon
             Row(
@@ -245,6 +247,13 @@ fun SettingsCompatibilityScreen(
                 }
             }
         }
+
+        // Docked Bottom Navigation Bar
+        WePlayBottomNav(
+            currentTab = AppScreen.SETTINGS,
+            onTabSelect = onNavigateToTab,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 }
 

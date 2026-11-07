@@ -14,6 +14,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -28,18 +29,15 @@ import com.weplay.sync.audio.AudioShareService
 import com.weplay.sync.audio.ReceiverState
 import com.weplay.sync.bluetooth.BluetoothDeviceManager
 import com.weplay.sync.data.DeviceGroupManager
-import com.weplay.sync.shared.model.AudioCapability
 import com.weplay.sync.shared.model.AudioOutputDevice
 import com.weplay.sync.shared.model.AudioSharingSession
 import com.weplay.sync.shared.model.CaptureSourceType
 import com.weplay.sync.shared.model.CaptureStatus
-import com.weplay.sync.shared.model.ConnectedListener
 import com.weplay.sync.shared.model.ConnectionStatus
 import com.weplay.sync.shared.model.DeviceGroup
 import com.weplay.sync.shared.model.DeviceType
 import com.weplay.sync.shared.model.NearbyStream
 import com.weplay.sync.shared.model.SharingTransport
-import com.weplay.sync.shared.model.SyncMetrics
 import com.weplay.sync.shared.model.TransportType
 import com.weplay.sync.sync.SyncCoordinator
 import com.weplay.sync.ui.screens.AppScreen
@@ -60,7 +58,6 @@ import com.weplay.sync.ui.screens.ShareHomeScreen
 import com.weplay.sync.ui.screens.SyncDiagnostics
 import com.weplay.sync.ui.screens.WePlaySplashScreen
 import com.weplay.sync.ui.theme.WePlayTheme
-import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class MainActivity : ComponentActivity() {
@@ -89,6 +86,16 @@ class MainActivity : ComponentActivity() {
             onProjectionApproved = null
         } else {
             Toast.makeText(this, "Audio capture permission denied. WePlay cannot broadcast audio.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private val bluetoothPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val connectGranted = permissions[android.Manifest.permission.BLUETOOTH_CONNECT] ?: true
+        if (connectGranted) {
+            bluetoothManager.loadBondedAudioDevices()
+            routeManager.refreshSystemRoutes()
         }
     }
 
@@ -121,7 +128,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val splashScreen = installSplashScreen()
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         handleScreenIntent(intent)
 
@@ -135,6 +142,7 @@ class MainActivity : ComponentActivity() {
 
         playbackEngine.initializeEngine()
         routeManager.refreshSystemRoutes()
+        bluetoothManager.loadBondedAudioDevices()
 
         // Bind AudioShareService
         val serviceIntent = Intent(this, AudioShareService::class.java)
@@ -163,6 +171,23 @@ class MainActivity : ComponentActivity() {
                         } else {
                             audioShareService?.startSharing(null)
                             onApproved()
+                        }
+                    },
+                    onRequestBluetoothPermission = {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            bluetoothPermissionLauncher.launch(
+                                arrayOf(
+                                    android.Manifest.permission.BLUETOOTH_CONNECT,
+                                    android.Manifest.permission.BLUETOOTH_SCAN
+                                )
+                            )
+                        }
+                    },
+                    onOpenBluetoothSettings = {
+                        try {
+                            startActivity(Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS))
+                        } catch (e: Exception) {
+                            startActivity(Intent(android.provider.Settings.ACTION_SETTINGS))
                         }
                     },
                     onToggleMute = { audioShareService?.toggleMute() },
@@ -195,6 +220,8 @@ fun WePlayRootNavigator(
     liveHostSession: AudioSharingSession?,
     requestedScreenFlow: MutableStateFlow<AppScreen?>,
     onRequestMediaProjection: (onApproved: () -> Unit) -> Unit,
+    onRequestBluetoothPermission: () -> Unit,
+    onOpenBluetoothSettings: () -> Unit,
     onToggleMute: () -> Unit,
     onStopSharing: () -> Unit,
     onRemoveListener: (String) -> Unit
@@ -202,7 +229,11 @@ fun WePlayRootNavigator(
     val requestedByIntent by requestedScreenFlow.collectAsState()
     var currentScreen by remember { mutableStateOf<AppScreen>(requestedByIntent ?: AppScreen.SPLASH) }
     var previousScreen by remember { mutableStateOf<AppScreen>(AppScreen.SHARE_HOME) }
-    var hasCompletedOnboarding by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val prefs = remember { context.getSharedPreferences("weplay_prefs", android.content.Context.MODE_PRIVATE) }
+    var hasCompletedOnboarding by remember {
+        mutableStateOf(prefs.getBoolean("has_completed_onboarding", false))
+    }
 
     LaunchedEffect(requestedByIntent) {
         requestedByIntent?.let {
@@ -210,7 +241,7 @@ fun WePlayRootNavigator(
         }
     }
 
-    // Use live session from bound service, fallback to clean local state
+    // Live session state from service
     val activeSession = liveHostSession ?: AudioSharingSession(
         sessionCode = "WP-4829",
         sessionName = "My Device Audio",
@@ -218,7 +249,7 @@ fun WePlayRootNavigator(
         sourceType = CaptureSourceType.DEVICE_MEDIA_PLAYBACK,
         status = CaptureStatus.READY_TO_START,
         transport = SharingTransport.WIFI_RECEIVER,
-        listeners = emptyList(), // Honest: empty by default
+        listeners = emptyList(),
         bufferDepthMs = 30,
         sampleRate = 48000,
         bitDepth = 16,
@@ -230,53 +261,56 @@ fun WePlayRootNavigator(
     val isConnectedAsListener = receiverTelemetry.state == ReceiverState.STREAMING || receiverTelemetry.state == ReceiverState.HANDSHAKE_ACCEPTED
     var connectedHostName by remember { mutableStateOf<String?>("WePlay Audio Host") }
     var connectedHostCode by remember { mutableStateOf<String?>("WP-4829") }
-
     val nearbyStreams = remember { emptyList<NearbyStream>() }
 
-    // System audio output routes
+    // System audio output routes & real Bluetooth devices
     val availableRoutes by routeManager.availableRoutes.collectAsState()
-    var devices by remember(availableRoutes) {
+    val scannedBtDevices by bluetoothManager.scannedDevices.collectAsState()
+
+    val devicesState = remember { mutableStateOf<List<AudioOutputDevice>>(emptyList()) }
+    LaunchedEffect(availableRoutes, scannedBtDevices) {
+        val list = mutableListOf<AudioOutputDevice>()
+        list.addAll(availableRoutes)
+        for (bt in scannedBtDevices) {
+            if (list.none { it.hardwareAddress == bt.hardwareAddress || it.name == bt.name }) {
+                list.add(bt)
+            }
+        }
+        devicesState.value = list.map { dev ->
+            val prev = devicesState.value.find { it.id == dev.id }
+            if (prev != null) dev.copy(isSelectedForPlayback = prev.isSelectedForPlayback, volume = prev.volume) else dev
+        }
+    }
+    var devices by devicesState
+
+    // Real system volume
+    var masterVolume by remember { mutableFloatStateOf(routeManager.getSystemVolumeFraction()) }
+    var isMasterMuted by remember { mutableStateOf(false) }
+
+    // Real Audio Playback Tracking
+    val isEnginePlaying by playbackEngine.isPlaying.collectAsState()
+    val enginePositionMs by playbackEngine.currentPositionMs.collectAsState()
+
+    var trackState by remember {
         mutableStateOf(
-            if (availableRoutes.isNotEmpty()) availableRoutes else listOf(
-                AudioOutputDevice(
-                    id = "dev_default_speaker",
-                    name = "Built-in Speaker",
-                    type = DeviceType.SYSTEM_BUILTIN,
-                    transport = TransportType.BUILTIN_SPEAKER,
-                    status = ConnectionStatus.AUDIO_READY,
-                    volume = 0.8f,
-                    isSelectedForPlayback = true
-                ),
-                AudioOutputDevice(
-                    id = "dev_sony_xm5",
-                    name = "Sony WH-1000XM5",
-                    type = DeviceType.HEADPHONES,
-                    transport = TransportType.BLUETOOTH_A2DP,
-                    status = ConnectionStatus.PLAYING,
-                    volume = 0.85f,
-                    isSelectedForPlayback = true
-                )
+            PlayerTrackState(
+                title = "Midnight Horizons",
+                artist = "Ambient Atlas",
+                album = "Charcoal",
+                durationMs = 204000L,
+                currentPositionMs = 0L,
+                isPlaying = false,
+                format = "FLAC",
+                sampleRate = 48000,
+                bitDepth = 24
             )
         )
     }
 
-    var masterVolume by remember { mutableFloatStateOf(0.75f) }
-    var isMasterMuted by remember { mutableStateOf(false) }
-
-    // Track state for Now Playing and Music Home screens
-    var trackState by remember {
-        mutableStateOf(
-            PlayerTrackState(
-                title = "Unsayable",
-                artist = "Brambles",
-                album = "Charcoal",
-                durationMs = 172000L,
-                currentPositionMs = 64000L,
-                isPlaying = true,
-                format = "FLAC",
-                sampleRate = 96000,
-                bitDepth = 24
-            )
+    LaunchedEffect(isEnginePlaying, enginePositionMs) {
+        trackState = trackState.copy(
+            isPlaying = isEnginePlaying,
+            currentPositionMs = enginePositionMs
         )
     }
 
@@ -294,6 +328,7 @@ fun WePlayRootNavigator(
                 onComplete = { quality, sync ->
                     playbackEngine.setQuality(quality)
                     syncCoordinator.setSyncMode(sync)
+                    prefs.edit().putBoolean("has_completed_onboarding", true).apply()
                     hasCompletedOnboarding = true
                     currentScreen = AppScreen.SHARE_HOME
                 }
@@ -312,6 +347,14 @@ fun WePlayRootNavigator(
                 onJoinSession = {
                     previousScreen = AppScreen.SHARE_HOME
                     currentScreen = AppScreen.JOIN_SESSION
+                },
+                onOpenLibrary = {
+                    previousScreen = AppScreen.SHARE_HOME
+                    currentScreen = AppScreen.LIBRARY
+                },
+                onOpenRooms = {
+                    previousScreen = AppScreen.SHARE_HOME
+                    currentScreen = AppScreen.MULTI_OUTPUT_ROOM
                 },
                 onOpenDevices = {
                     previousScreen = AppScreen.SHARE_HOME
@@ -353,7 +396,6 @@ fun WePlayRootNavigator(
                 nearbyStreams = nearbyStreams,
                 onConnectByCode = { code ->
                     connectedHostCode = code
-                    // Parse optional IP:PORT or PIN, or default to localhost / standard broadcast IP
                     val hostIp = if (code.contains(".")) code.substringBefore(":") else "127.0.0.1"
                     connectedHostName = "Host ($code)"
                     receiverEngine.connect(hostIp, code)
@@ -375,8 +417,14 @@ fun WePlayRootNavigator(
                 outputs = devices,
                 masterVolume = masterVolume,
                 isMasterMuted = isMasterMuted,
-                onMasterVolumeChange = { v -> masterVolume = v },
-                onMasterMuteToggle = { isMasterMuted = !isMasterMuted },
+                onMasterVolumeChange = { v ->
+                    masterVolume = v
+                    routeManager.setSystemVolumeFraction(v)
+                },
+                onMasterMuteToggle = {
+                    isMasterMuted = !isMasterMuted
+                    routeManager.setSystemMuted(isMasterMuted)
+                },
                 onDeviceVolumeChange = { id, vol ->
                     devices = devices.map { if (it.id == id) it.copy(volume = vol) else it }
                 },
@@ -392,7 +440,7 @@ fun WePlayRootNavigator(
                     }
                 },
                 onScanDevices = {
-                    routeManager.refreshSystemRoutes()
+                    currentScreen = AppScreen.DEVICE_DISCOVERY
                 },
                 onBack = { currentScreen = previousScreen }
             )
@@ -402,7 +450,6 @@ fun WePlayRootNavigator(
             val qualitySetting by playbackEngine.qualitySetting.collectAsState()
             val syncMode by syncCoordinator.syncMode.collectAsState()
 
-            // True diagnostics from active receiver or host
             val isHost = activeSession.status == CaptureStatus.CAPTURING_ACTIVE
             val measuredRtt = if (isHost) activeSession.rttMs else receiverTelemetry.rttMs
             val measuredJitter = if (isHost) 0.8 else receiverTelemetry.jitterMs
@@ -421,7 +468,7 @@ fun WePlayRootNavigator(
                 ),
                 onQualityChange = { playbackEngine.setQuality(it) },
                 onSyncModeChange = { syncCoordinator.setSyncMode(it) },
-                onCalibrateClocks = { /* trigger clock sync packet exchange */ },
+                onCalibrateClocks = { },
                 onBack = { currentScreen = previousScreen }
             )
         }
@@ -432,7 +479,8 @@ fun WePlayRootNavigator(
                     previousScreen = AppScreen.SETTINGS
                     currentScreen = AppScreen.DIAGNOSTICS
                 },
-                onBack = { currentScreen = AppScreen.SHARE_HOME }
+                onBack = { currentScreen = AppScreen.SHARE_HOME },
+                onNavigateToTab = { currentScreen = it }
             )
         }
 
@@ -440,12 +488,17 @@ fun WePlayRootNavigator(
             HomeScreen(
                 trackState = trackState,
                 activeDevices = devices,
-                isPlaying = trackState.isPlaying,
+                isPlaying = isEnginePlaying,
                 onTrackSelect = { title, artist, album ->
                     trackState = trackState.copy(title = title, artist = artist, album = album)
+                    playbackEngine.play()
                 },
                 onPlayPauseToggle = {
-                    trackState = trackState.copy(isPlaying = !trackState.isPlaying)
+                    if (isEnginePlaying) {
+                        playbackEngine.pause()
+                    } else {
+                        playbackEngine.play()
+                    }
                 },
                 onOpenPlayer = { currentScreen = AppScreen.NOW_PLAYING },
                 onOpenAudioRoom = { currentScreen = AppScreen.MULTI_OUTPUT_ROOM },
@@ -459,30 +512,59 @@ fun WePlayRootNavigator(
                 trackState = trackState,
                 activeDevices = devices,
                 onPlayPauseToggle = {
-                    trackState = trackState.copy(isPlaying = !trackState.isPlaying)
+                    if (isEnginePlaying) {
+                        playbackEngine.pause()
+                    } else {
+                        playbackEngine.play()
+                    }
                 },
-                onSeek = { trackState = trackState.copy(currentPositionMs = it) },
+                onSeek = { targetMs ->
+                    playbackEngine.seekTo(targetMs)
+                },
                 onNextTrack = { },
                 onPreviousTrack = { },
-                onOpenOutputSelector = { currentScreen = AppScreen.OUTPUT_MANAGEMENT },
+                onOpenOutputSelector = { currentScreen = AppScreen.DEVICE_DISCOVERY },
                 onOpenQueue = { currentScreen = AppScreen.LIBRARY },
                 onBack = { currentScreen = previousScreen }
             )
         }
 
         AppScreen.DEVICE_DISCOVERY -> {
-            var isScanning by remember { mutableStateOf(true) }
+            var isScanning by remember { mutableStateOf(false) }
+
+            LaunchedEffect(Unit) {
+                bluetoothManager.loadBondedAudioDevices()
+                routeManager.refreshSystemRoutes()
+            }
+
             DeviceDiscoveryScreen(
                 devices = devices,
+                isBluetoothEnabled = bluetoothManager.isBluetoothEnabled,
+                hasBluetoothPermission = bluetoothManager.hasBluetoothPermission(),
                 isScanning = isScanning,
-                onStartScan = { isScanning = true },
-                onStopScan = { isScanning = false },
+                onStartScan = {
+                    isScanning = true
+                    bluetoothManager.startScanning()
+                    routeManager.refreshSystemRoutes()
+                },
+                onStopScan = {
+                    isScanning = false
+                    bluetoothManager.stopScanning()
+                },
                 onToggleSelect = { id ->
-                    devices = devices.map { if (it.id == id) it.copy(isSelectedForPlayback = !it.isSelectedForPlayback) else it }
+                    devices = devices.map {
+                        if (it.id == id) {
+                            it.copy(isSelectedForPlayback = !it.isSelectedForPlayback)
+                        } else {
+                            it
+                        }
+                    }
                 },
                 onVolumeChange = { id, v ->
                     devices = devices.map { if (it.id == id) it.copy(volume = v) else it }
                 },
+                onOpenBluetoothSettings = onOpenBluetoothSettings,
+                onRequestPermission = onRequestBluetoothPermission,
                 onBack = { currentScreen = previousScreen }
             )
         }
@@ -490,29 +572,45 @@ fun WePlayRootNavigator(
         AppScreen.MULTI_OUTPUT_ROOM -> {
             MultiOutputRoomScreen(
                 activeOutputs = devices,
+                listeners = activeSession.listeners,
                 masterVolume = masterVolume,
                 isMasterMuted = isMasterMuted,
-                onMasterVolumeChange = { masterVolume = it },
-                onMasterMuteToggle = { isMasterMuted = !isMasterMuted },
+                onMasterVolumeChange = { v ->
+                    masterVolume = v
+                    routeManager.setSystemVolumeFraction(v)
+                },
+                onMasterMuteToggle = {
+                    isMasterMuted = !isMasterMuted
+                    routeManager.setSystemMuted(isMasterMuted)
+                },
                 onDeviceVolumeChange = { id, v ->
                     devices = devices.map { if (it.id == id) it.copy(volume = v) else it }
                 },
                 onToggleDevice = { id ->
-                    devices = devices.map { if (it.id == id) it.copy(isSelectedForPlayback = !it.isSelectedForPlayback) else it }
+                    devices = devices.map {
+                        if (it.id == id) {
+                            val newSelected = !it.isSelectedForPlayback
+                            it.copy(
+                                isSelectedForPlayback = newSelected,
+                                status = if (newSelected) ConnectionStatus.PLAYING else ConnectionStatus.CONNECTED
+                            )
+                        } else it
+                    }
                 },
                 onAddDeviceClick = { currentScreen = AppScreen.DEVICE_DISCOVERY },
-                onClose = { currentScreen = previousScreen }
+                onClose = { currentScreen = previousScreen },
+                onNavigateToTab = { currentScreen = it }
             )
         }
 
         AppScreen.LIBRARY -> {
             val libraryTracks = remember {
                 listOf(
-                    LibraryTrackItem("1", "To Speak Of Solitude", "Brambles", "Charcoal", "4:21", "FLAC 24-bit / 96k"),
-                    LibraryTrackItem("2", "Unsayable", "Brambles", "Charcoal", "2:52", "FLAC 24-bit / 96k"),
-                    LibraryTrackItem("3", "In The Androgynous Dark", "Brambles", "Charcoal", "4:43", "FLAC 24-bit / 96k"),
-                    LibraryTrackItem("4", "Salt Photographs", "Brambles", "Charcoal", "6:54", "FLAC 24-bit / 96k"),
-                    LibraryTrackItem("5", "Pink And Golden Billows", "Brambles", "Charcoal", "2:58", "FLAC 24-bit / 96k")
+                    LibraryTrackItem("1", "Midnight Horizons", "Ambient Atlas", "Atlas", "3:24", "FLAC 24-bit / 48k"),
+                    LibraryTrackItem("2", "To Speak Of Solitude", "Brambles", "Charcoal", "4:21", "FLAC 24-bit / 48k"),
+                    LibraryTrackItem("3", "Unsayable", "Brambles", "Charcoal", "2:52", "FLAC 24-bit / 48k"),
+                    LibraryTrackItem("4", "Ambient Flow", "Atlas", "Ambient", "3:40", "FLAC 24-bit / 48k"),
+                    LibraryTrackItem("5", "Deep Pulse", "Nova", "Focus", "4:12", "FLAC 24-bit / 48k")
                 )
             }
             val groups = remember {
@@ -520,7 +618,7 @@ fun WePlayRootNavigator(
                     DeviceGroup(
                         id = "grp_all",
                         name = "Whole House Audio",
-                        deviceIds = listOf("dev_default_speaker", "dev_sony_xm5"),
+                        deviceIds = listOf("system_speaker"),
                         masterVolume = 0.8f,
                         isMuted = false
                     )
@@ -531,11 +629,13 @@ fun WePlayRootNavigator(
                 savedGroups = groups,
                 onTrackSelect = { item ->
                     trackState = trackState.copy(title = item.title, artist = item.artist, album = item.album)
+                    playbackEngine.play()
                     currentScreen = AppScreen.NOW_PLAYING
                 },
                 onApplyGroup = { },
                 onSaveCurrentGroup = { },
-                onBack = { currentScreen = previousScreen }
+                onBack = { currentScreen = previousScreen },
+                onNavigateToTab = { currentScreen = it }
             )
         }
     }
